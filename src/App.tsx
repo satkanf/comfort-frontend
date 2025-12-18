@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
+
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
       <TooltipProvider>
@@ -26,16 +27,17 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/golovna" element={<Index />} />
             <Route path="/services" element={<ServicesPage />} />
-            <Route path="/services/:serviceId" element={<ServiceDetail />} />
+            <Route path="/serrvices/:poslugyId" element={<ServiceDetail />} />
             <Route path="/doctors" element={<Doctors />} />
-            <Route path="/doctors/:id" element={<DoctorDetail />} />
-            <Route path="/prices" element={<Prices />} />
+            <Route path="/doctors/:slug" element={<DoctorDetail />} />
+            <Route path="/likari/:slug" element={<DoctorDetail />} />
+            <Route path="/cziny" element={<Prices />} />
             <Route path="/about" element={<About />} />
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/blog" element={<Blog />} />
-            <Route path="/promotions" element={<Promotions />} />
+            <Route path="/akcziyi" element={<Promotions />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

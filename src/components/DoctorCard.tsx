@@ -1,81 +1,126 @@
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Star, Award, Calendar } from "lucide-react";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Calendar } from 'lucide-react';
 
-interface DoctorCardProps {
+export interface DoctorCardData {
   id: number;
-  name: string;
-  specialty: string;
-  image: string;
-  education: string;
-  experience: string;
-  rating: number;
-  reviewCount: number;
-  description: string;
+  title: {
+    rendered: string;
+  };
+  slug: string; // ← обязательно есть
+  _embedded?: any;
+  acf?: {
+    doctor_avatar?: string;
+    doctor_info?: {
+      doctor_specialization?: string;
+      doctor_experience?: string;
+    };
+    doctor_info_ru?: string;
+  };
+  category_names?: string[];
 }
 
-const DoctorCard = ({
-  id,
-  name,
-  specialty,
-  image,
-  education,
-  experience,
-  rating,
-  reviewCount,
-  description,
-}: DoctorCardProps) => {
+interface DoctorCardProps {
+  doctor: DoctorCardData;
+  language?: string;
+}
+
+const DoctorCard: React.FC<DoctorCardProps> = ({ doctor, language = "uk" }) => {
   const navigate = useNavigate();
+  const { title, slug, acf, category_names } = doctor;
+  // безопасное извлечение значений
+  const getSafeString = (field: any): string => {
+    if (!field) return '';
+    if (typeof field === 'string') return field;
+    if (typeof field === 'object') return Object.values(field).join(', ');
+    return String(field || '');
+  };
 
+  const specialization = getSafeString(acf?.doctor_info?.doctor_specialization);
+  const experience = getSafeString(acf?.doctor_info?.doctor_experience);
+  const avatar =
+  doctor._embedded?.featured?.media_details?.sizes?.medium?.source_url ||
+  doctor._embedded?.featured?.source_url ||
+  "";
+  const category = category_names?.[0] || '';
+  console.log(avatar)
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer" onClick={() => navigate(`/doctors/${id}`)}>
-      <div className="relative h-64 overflow-hidden bg-gradient-to-br from-medical-gray-light to-secondary/30">
-        <img
-          src={image}
-          alt={`${name} - ${specialty}`}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute top-4 right-4">
-          <Badge className="bg-primary text-white">{specialty}</Badge>
-        </div>
+    <Card
+      className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer h-full flex flex-col"
+      onClick={() => navigate(`/doctors/${doctor.slug}`)} // ← переход по slug
+    >
+      {/* Изображение */}
+      <div className="relative h-48 bg-gradient-to-br from-medical-gray-light to-secondary/30 flex-shrink-0">
+        {avatar ? (
+          
+          <img
+            src={avatar}
+            alt={`${title.rendered} - ${specialization}`}
+            className="w-full h-full object-cover"
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="text-4xl text-primary/60">👨‍⚕️</div>
+          </div>
+        )}
+
+        {category && (
+          <div className="absolute top-3 right-3">
+            <Badge className="bg-primary text-white text-xs">
+              {category}
+            </Badge>
+          </div>
+        )}
       </div>
-      <CardHeader className="space-y-3 pb-4">
-        <div>
-          <h3 className="text-xl font-bold text-foreground">{name}</h3>
-          <p className="text-sm text-muted-foreground mt-1">{specialty}</p>
+
+      {/* Заголовок */}
+      <CardHeader className="p-4 pb-2 flex-grow-0">
+        <div className="space-y-1">
+          <h3 className="font-bold text-foreground line-clamp-1 text-base">
+            {title.rendered}
+          </h3>
+          {specialization && (
+            <p className="text-sm text-muted-foreground line-clamp-1">
+              {specialization}
+            </p>
+          )}
         </div>
-       
       </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
-        
-        <div className="space-y-2">
-          <div className="flex items-start gap-2">
-            <Award className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-xs font-semibold text-foreground">Освіта</p>
-              <p className="text-xs text-muted-foreground">{education}</p>
+
+      {/* Контент */}
+      <CardContent className="p-4 pt-2 flex flex-col flex-grow min-h-0">
+
+        {/* Experience */}
+        <div className="space-y-2 flex-shrink-0">
+          {experience && (
+            <div className="flex items-start gap-2">
+              <Calendar className="h-3 w-3 text-primary mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-grow">
+                <p className="text-xs font-semibold text-foreground">
+                  {language === "uk" ? "Досвід" : "Опыт"}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {experience}
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-xs font-semibold text-foreground">Досвід</p>
-              <p className="text-xs text-muted-foreground">{experience}</p>
-            </div>
-          </div>
+          )}
         </div>
 
-        <Button 
-          className="w-full mt-4"
+        {/* Кнопка — по slug */}
+        <Button
+          className="w-full mt-3 flex-shrink-0"
+          size="sm"
           onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/doctors/${id}`);
+            e.stopPropagation(); // чтобы не сработал клик карточки
+            navigate(`/doctors/${doctor.slug}`); // ← slug
           }}
         >
-          Переглянути профіль
+          {language === "uk" ? "Переглянути профіль" : "Посмотреть профиль"}
         </Button>
       </CardContent>
     </Card>

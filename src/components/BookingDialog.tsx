@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,79 +7,109 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-interface BookingDialogProps {
-  triggerText?: string;
-  preselectedService?: string;
-  preselectedDoctor?: string;
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  acf?: {
+    show_in_form?:boolean;
+  }
+  specialtyText: string;
 }
 
-const BookingDialog = ({ triggerText, preselectedService, preselectedDoctor }: BookingDialogProps) => {
+const BookingDialog = () => {
   const { toast } = useToast();
-  const { language } = useLanguage();
   const [open, setOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     date: "",
     time: "",
-    specialty: preselectedService || "",
-    doctor: preselectedDoctor || "",
+    specialty:"",
+    specialtyText: ""
+    
   });
+  const { t } = useLanguage();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("https://comfort.satkan.site/wp-json/wp/v2/category-doctors");
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        const data = await response.json();
+        setCategories(data);
+      } catch (err) {
+        setError(err.message || "Ошибка при загрузке");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+    if (loading) {
+    return <div></div>;
+  }
+
+  if (error) {
+    return <div>Ошибка: {error}</div>;
+  }
+
+  if (!categories) {
+    return null;
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    toast({
-      title: language === 'uk' ? "Запис оформлено!" : "Запись оформлена!",
-      description: language === 'uk' 
-        ? "Ми зв'яжемося з вами найближчим часом для підтвердження." 
-        : "Мы свяжемся с вами в ближайшее время для подтверждения.",
+    const response = await fetch("https://comfort.satkan.site/wp-json/custom/v1/booking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+      ...formData,
+      specialty: formData.specialtyText, // отправляем текст
+    }),
     });
+
+    const json = await response.json();
+    
+    if (json.success) toast({
+      title: t('callback'),
+      description: t('callback'),
+    });
+    else toast({title: "Помилка"})
     setOpen(false);
-    setFormData({
-      name: "",
-      phone: "",
-      date: "",
-      time: "",
-      specialty: preselectedService || "",
-      doctor: preselectedDoctor || "",
-    });
   };
 
-  const specialties = [
-    { value: "therapist", label: language === 'uk' ? "Терапевт" : "Терапевт" },
-    { value: "cardiologist", label: language === 'uk' ? "Кардіолог" : "Кардиолог" },
-    { value: "dermatologist", label: language === 'uk' ? "Дерматолог" : "Дерматолог" },
-    { value: "gynecologist", label: language === 'uk' ? "Гінеколог" : "Гинеколог" },
-    { value: "pediatrician", label: language === 'uk' ? "Педіатр" : "Педиатр" },
-    { value: "ophthalmologist", label: language === 'uk' ? "Офтальмолог" : "Офтальмолог" },
-    { value: "cosmetologist", label: language === 'uk' ? "Косметолог" : "Косметолог" },
-    { value: "ultrasound", label: language === 'uk' ? "УЗД спеціаліст" : "УЗИ специалист" },
-  ];
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="lg">
-          {triggerText || (language === 'uk' ? "Записатися на прийом" : "Записаться на прием")}
+          {t('doctors.appointment')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {language === 'uk' ? "Записатися на прийом" : "Записаться на прием"}
+            {t('doctors.appointment')}
           </DialogTitle>
           <DialogDescription>
-            {language === 'uk' 
-              ? "Заповніть форму і ми зв'яжемося з вами найближчим часом" 
-              : "Заполните форму и мы свяжемся с вами в ближайшее время"}
+              {t('fill.form')}
           </DialogDescription>
+          
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="name">{language === 'uk' ? "Ім'я" : "Имя"} *</Label>
+            <Label htmlFor="name">{t('name')}*</Label>
             <Input
               id="name"
-              placeholder={language === 'uk' ? "Введіть ваше ім'я" : "Введите ваше имя"}
+              placeholder={t('enter.name')}
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -87,7 +117,7 @@ const BookingDialog = ({ triggerText, preselectedService, preselectedDoctor }: B
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">{language === 'uk' ? "Телефон" : "Телефон"} *</Label>
+            <Label htmlFor="phone">{t('phone')}*</Label>
             <Input
               id="phone"
               type="tel"
@@ -100,7 +130,7 @@ const BookingDialog = ({ triggerText, preselectedService, preselectedDoctor }: B
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="date">{language === 'uk' ? "Дата" : "Дата"} *</Label>
+              <Label htmlFor="date">{t('date')} *</Label>
               <Input
                 id="date"
                 type="date"
@@ -111,7 +141,7 @@ const BookingDialog = ({ triggerText, preselectedService, preselectedDoctor }: B
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="time">{language === 'uk' ? "Час" : "Время"} *</Label>
+              <Label htmlFor="time">{t('time')} *</Label>
               <Input
                 id="time"
                 type="time"
@@ -123,27 +153,40 @@ const BookingDialog = ({ triggerText, preselectedService, preselectedDoctor }: B
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="specialty">{language === 'uk' ? "Спеціальність лікаря" : "Специальность врача"}</Label>
-            <Select value={formData.specialty} onValueChange={(value) => setFormData({ ...formData, specialty: value })}>
+            <Label htmlFor="specialty">{t('specialty.doctor')}</Label>
+            <Select value={formData.specialty} // здесь хранится slug
+              onValueChange={(value) => {
+                // найти объект категории по slug
+                const selected = categories.find((c) => c.slug === value);
+                // сохранить и slug, и текст
+                setFormData({
+                  ...formData,
+                  specialty: value,          // slug для value
+                  specialtyText: selected?.name || "", // текст для письма
+                });
+              }}>
               <SelectTrigger>
-                <SelectValue placeholder={language === 'uk' ? "Оберіть спеціальність" : "Выберите специальность"} />
+                <SelectValue placeholder={t('choose.specialist')} />
               </SelectTrigger>
               <SelectContent>
-                {specialties.map((specialty) => (
-                  <SelectItem key={specialty.value} value={specialty.value}>
-                    {specialty.label}
-                  </SelectItem>
+                {categories
+                   .filter((specialty) => specialty.acf?.show_in_form === true) // только «Так»
+                  .map((specialty) => (
+                    <SelectItem key={specialty.id} value={specialty.slug}>
+                      {specialty.name}
+                    </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
           <Button type="submit" className="w-full">
-            {language === 'uk' ? "Записатися" : "Записаться"}
+            {t('receprion')}
           </Button>
         </form>
       </DialogContent>
     </Dialog>
+    
   );
 };
 

@@ -25,68 +25,78 @@ const CallbackDialog = ({ variant = "outline", size = "default", className }: Ca
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const { toast } = useToast();
-  const { language } = useLanguage();
+ const { t, language } = useLanguage();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Basic validation
-    if (!name.trim() || !phone.trim()) {
-      toast({
-        title: language === 'uk' ? "Помилка" : "Ошибка",
-        description: language === 'uk' ? "Будь ласка, заповніть всі поля" : "Пожалуйста, заполните все поля",
-        variant: "destructive",
-      });
-      return;
-    }
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
+  if (!name.trim() || !phone.trim()) {
     toast({
-      title: language === 'uk' ? "Заявка відправлена!" : "Заявка отправлена!",
-      description: language === 'uk' 
-        ? "Ми зв'яжемося з вами найближчим часом" 
-        : "Мы свяжемся с вами в ближайшее время",
+      title: t('error'),
+      description: t('error.send'),
+      variant: "destructive",
     });
-    
-    setName("");
-    setPhone("");
-    setOpen(false);
-  };
+    return;
+  }
+
+  const res = await fetch("https://comfort.satkan.site/wp-json/custom/v1/callback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, phone })
+  });
+
+  if (!res.ok) {
+    toast({
+      title: t('error'),
+      description: t('error.send'),
+      variant: "destructive",
+    });
+    return;
+  }
+
+  toast({
+    title: t('send.ok'),
+    description: t('me.call'),
+  });
+
+  setName("");
+  setPhone("");
+  setOpen(false);
+};
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant={variant} size={size} className={className}>
           <Phone className="h-4 w-4" />
-          {language === 'uk' ? 'Зателефонувати' : 'Позвонить'}
+          {t('call')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {language === 'uk' ? 'Замовити зворотний дзвінок' : 'Заказать обратный звонок'}
+             {t('callback')}
           </DialogTitle>
           <DialogDescription>
-            {language === 'uk' 
-              ? 'Залиште свої контактні дані, і ми зв\'яжемося з вами найближчим часом' 
-              : 'Оставьте свои контактные данные, и мы свяжемся с вами в ближайшее время'}
+               {t('contacts.leave')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
             <Label htmlFor="callback-name">
-              {language === 'uk' ? "Ім'я" : 'Имя'}
+              {t('name')}
             </Label>
             <Input
               id="callback-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={language === 'uk' ? "Введіть ваше ім'я" : 'Введите ваше имя'}
+              placeholder={t('enter.name')}
               required
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="callback-phone">
-              {language === 'uk' ? 'Телефон' : 'Телефон'}
+               {t('phone')}
             </Label>
             <Input
               id="callback-phone"
@@ -98,7 +108,7 @@ const CallbackDialog = ({ variant = "outline", size = "default", className }: Ca
             />
           </div>
           <Button type="submit" className="w-full">
-            {language === 'uk' ? 'Відправити заявку' : 'Отправить заявку'}
+             {t('send.form')}
           </Button>
         </form>
       </DialogContent>

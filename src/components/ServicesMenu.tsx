@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import MenuTree from "./MenuTree";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   NavigationMenu,
@@ -12,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 const ServicesMenu = () => {
   const { language } = useLanguage();
+  const [menu, setMenu] = useState([]);
 
   const serviceCategories = [
     {
@@ -44,42 +47,32 @@ const ServicesMenu = () => {
     }
   ];
 
+  useEffect(() => {
+    fetch("https://comfort.satkan.site/wp-json/menus/v1/menus/header-menu")
+      .then(res => res.json())
+      .then(data => setMenu(data.items || []));
+  }, []);
   return (
     <NavigationMenu>
       <NavigationMenuList>
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="text-hover">
-            {language === 'uk' ? 'Послуги' : 'Услуги'}
-          </NavigationMenuTrigger>
+          {menu
+            .filter(item => item.classes?.includes("dropdown"))
+            .map((item, index) => (
+              <NavigationMenuTrigger key={index} className="text-hover">
+                {item.title}
+              </NavigationMenuTrigger>
+            
+          ))}
           <NavigationMenuContent>
             <div className="p-6">
               <div className="grid grid-cols-4 gap-8">
-                {serviceCategories.map((category) => (
-                  <div key={category.title} className="space-y-4">
-                    <Link 
-                      to="/services" 
-                      className="block font-bold text-base text-primary transition-colors"
-                    >
-                      {category.title}
-                    </Link>
-                    <ul className="space-y-2">
-                      {category.services.map((service) => (
-                        <li key={service.id}>
-                          <NavigationMenuLink asChild>
-                            <Link
-                              to={`/services/${service.id}`}
-                              className={cn(
-                                "block select-none rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                              )}
-                            >
-                              {service.name}
-                            </Link>
-                          </NavigationMenuLink>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                  {menu
+                    .filter(item => item.classes?.includes("dropdown"))
+                    .map((item, index) => (
+                      <MenuTree key={index} items={item.child_items} />
+                    ))
+                  }
               </div>
               <div className="border-t mt-6 pt-4">
                 <NavigationMenuLink asChild>

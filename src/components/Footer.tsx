@@ -1,10 +1,47 @@
 import { Facebook, Instagram, Mail, MapPin, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 
 import logo from "../assets/logo.png";
+import FooterMenu from "./FooterMenu";
 
 const Footer = () => {
+  const [contactsData, setContactsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+
+   useEffect(() => {
+      const fetchContacts = async () => {
+        try {
+          const response = await fetch("https://comfort.satkan.site/wp-json/custom/v1/page/contacts?_embed");
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          const data = await response.json();
+          setContactsData(data);
+        } catch (err) {
+          setError(err.message || "Ошибка при загрузке");
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchContacts();
+    }, []);
+     if (loading) {
+      return <div></div>;
+    }
+
+    if (error) {
+      return <div>Ошибка: {error}</div>;
+    }
+
+    if (!contactsData) {
+      return null;
+    }
+
   return (
     <footer className="border-t main-color">
       <div className="container py-12 md:py-16">
@@ -19,46 +56,25 @@ const Footer = () => {
               Сучасний медичний центр з командою висококваліфікованих фахівців.
             </p>
             <div className="flex gap-4">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-social bg-secondary/20 text-primary hover:bg-secondary/40 hover:text-white transition-colors"
-              >
-                <Facebook className="h-4 w-4" />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-social bg-secondary/20 text-primary hover:bg-secondary/40 hover:text-white transition-colors"
-              >
-                <Instagram className="h-4 w-4" />
-              </a>
+              {contactsData.acf?.social.map((item,index) =>(
+                <a key={index}
+                  href={item.social_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-social bg-secondary/20 text-primary hover:bg-secondary/40 hover:text-white transition-colors"
+                >
+                  <img src={item.social_icon} alt={item.social_name} className="h-4 w-4 text-primary" />
+                </a>
+              ))}
+              
+              
             </div>
           </div>
 
           <div className="space-y-4">
             <h3 className="font-semibold text-primary-foreground text-xl">Навігація</h3>
             <nav className="flex flex-col space-y-2 text-sm">
-              <Link to="/" className="text-primary-foreground text-hover transition-colors">
-                Головна
-              </Link>
-              <Link to="/about" className="text-primary-foreground text-hover transition-colors">
-                Про нас
-              </Link>
-              <Link to="/services" className="text-primary-foreground text-hover transition-colors">
-                Послуги
-              </Link>
-              <Link to="/doctors" className="text-primary-foreground text-hover transition-colors">
-                Лікарі
-              </Link>
-              <Link to="/prices" className="text-primary-foreground text-hover transition-colors">
-                Ціни
-              </Link>
-              <Link to="/contact" className="text-primary-foreground text-hover transition-colors">
-                Контакти
-              </Link>
+              <FooterMenu />
             </nav>
           </div>
 
@@ -87,28 +103,24 @@ const Footer = () => {
           </div>
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-primary-foreground text-xl">Контакти</h3>
+            <h3 className="font-semibold text-primary-foreground text-xl">{contactsData.title}</h3>
             <div className="space-y-3 text-sm">
               <div className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                <span className="text-primary-foreground">м. Ірпінь, вул. Західна 6 (вхід з вул. Джерельна)</span>
+                <span className="text-primary-foreground">{contactsData.acf?.location?.location_value}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-primary flex-shrink-0" />
-                <a href="tel:+380954220032" className="text-primary-foreground text-hover transition-colors">
-                  +38 (095) 422 00 32
-                </a>
+              {contactsData.acf?.phone.map((item, index) => (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-primary flex-shrink-0" />
+                  <a href={`tel:${item.phone_value}`} className="text-primary-foreground text-hover transition-colors">
+                    {item.phone_number}
+                  </a>
               </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-primary flex-shrink-0" />
-                <a href="tel:+380970970032" className="text-primary-foreground text-hover transition-colors">
-                  +38 (097) 097 00 32
-                </a>
-              </div>
+              ))}
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary flex-shrink-0" />
-                <a href="mailto:info@comfortclinic.com.ua" className="text-primary-foreground text-hover transition-colors">
-                  info@comfortclinic.com.ua
+                <a href={`mailto:${contactsData?.acf?.email?.email_value}`} className="text-primary-foreground text-hover transition-colors">
+                  {contactsData.acf?.email?.email_value}
                 </a>
               </div>
             </div>

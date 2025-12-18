@@ -1,29 +1,22 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Phone, MapPin, Menu, X } from "lucide-react";
+import { Phone, MapPin, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ServicesMenu from "./ServicesMenu";
 import BookingDialog from "./BookingDialog";
 import CallbackDialog from "./CallbackDialog";
 import { useLanguage } from "@/contexts/LanguageContext";
-
+import Menu from "./Menu";
 import logo from "../assets/logo.png";
 
-const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { t, language } = useLanguage();
+interface HeaderProps {
+  postId: string;
+}
 
-  const services = [
-    { id: 'gynecology', name: language === 'uk' ? 'Гінекологія' : 'Гинекология' },
-    { id: 'dermatology', name: language === 'uk' ? 'Дерматологія' : 'Дерматология' },
-    { id: 'cardiology', name: language === 'uk' ? 'Кардіологія' : 'Кардиология' },
-    { id: 'ultrasound', name: language === 'uk' ? 'УЗД діагностика' : 'УЗИ диагностика' },
-    { id: 'pediatrics', name: language === 'uk' ? 'Педіатрія' : 'Педиатрия' },
-    { id: 'therapy', name: language === 'uk' ? 'Терапія' : 'Терапия' },
-    { id: 'cosmetology', name: language === 'uk' ? 'Косметологія' : 'Косметология' },
-    { id: 'ophthalmology', name: language === 'uk' ? 'Офтальмологія' : 'Офтальмология' },
-  ];
+const Header = ({ postId }: HeaderProps) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+ 
 
   return (
     <header className="sticky top-0 z-50 w-full border-b main-color">
@@ -59,25 +52,7 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6 text-base font-medium">
-          <Link to="/" className="text-primary-foreground text-hover transition-colors">
-            {t('nav.home')}
-          </Link>
-          <Link to="/about" className="text-primary-foreground text-hover  transition-colors">
-            {t('nav.about')}
-          </Link>
-          <ServicesMenu />
-          <Link to="/doctors" className="text-primary-foreground text-hover  transition-colors">
-            {t('nav.doctors')}
-          </Link>
-          <Link to="/prices" className="text-primary-foreground text-hover  transition-colors">
-            {t('nav.prices')}
-          </Link>
-          <Link to="/promotions" className="text-primary-foreground text-hover transition-colors">
-            {t('nav.promotions')}
-          </Link>
-          <Link to="/contacts" className="text-primary-foreground text-hover  transition-colors">
-            {t('nav.contacts')}
-          </Link>
+          <Menu />
         </nav>
 
 

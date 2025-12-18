@@ -8,28 +8,28 @@ import clinicInterior2 from "@/assets/clinic-interior-2.jpg";
 import medicalTeam from "@/assets/medical-team.jpg";
 import heroMedical from "@/assets/hero-medical.jpg";
 
-const achievements = [
-  {
-    icon: Award,
-    title: "15 років досвіду",
-    description: "З 2009 року ми надаємо якісні медичні послуги",
-  },
-  {
-    icon: Users,
-    title: "50+ фахівців",
-    description: "Команда досвідчених лікарів різних спеціальностей",
-  },
-  {
-    icon: Heart,
-    title: "10 000+ пацієнтів",
-    description: "Довіра тисяч задоволених клієнтів",
-  },
-  {
-    icon: Star,
-    title: "Рейтинг 4.9",
-    description: "Високі оцінки та позитивні відгуки",
-  },
-];
+// const achievements = [
+//   {
+//     icon: Award,
+//     title: "15 років досвіду",
+//     description: "З 2009 року ми надаємо якісні медичні послуги",
+//   },
+//   {
+//     icon: Users,
+//     title: "50+ фахівців",
+//     description: "Команда досвідчених лікарів різних спеціальностей",
+//   },
+//   {
+//     icon: Heart,
+//     title: "10 000+ пацієнтів",
+//     description: "Довіра тисяч задоволених клієнтів",
+//   },
+//   {
+//     icon: Star,
+//     title: "Рейтинг 4.9",
+//     description: "Високі оцінки та позитивні відгуки",
+//   },
+// ];
 
 const About = () => {
   return (

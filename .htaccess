@@ -1,0 +1,11 @@
+RewriteEngine On
+
+# Если запрашивают /cms — это WordPress
+RewriteRule ^cms/(.*)$ cms/$1 [L]
+
+# Если запрашивают существующий файл — отдаём его
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Всё остальное → React index.html
+RewriteRule ^.*$ /index.html [L]
