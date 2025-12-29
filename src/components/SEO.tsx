@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslations } from "@/hooks/useTranslations";
 
 interface SEOProps {
   title?: string;
@@ -20,7 +20,7 @@ const SEO = ({
   type = "website",
   structuredData,
 }: SEOProps) => {
-  const { language } = useLanguage();
+  const { language } = useTranslations();
   
   const defaultTitle = language === 'uk' 
     ? "Comfort Clinic - Клініка краси та здоров'я в Ірпені"

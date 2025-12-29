@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useMultilangForms } from "@/hooks/useMultilangForms";
 
 interface CallbackDialogProps {
   variant?: "default" | "outline" | "ghost";
@@ -25,7 +25,21 @@ const CallbackDialog = ({ variant = "outline", size = "default", className }: Ca
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const { toast } = useToast();
- const { t, language } = useLanguage();
+  const { formTranslations } = useMultilangForms();
+
+  const translations = formTranslations || {
+    error: 'Помилка',
+    errorSend: 'Не вдалося відправити',
+    sendOk: 'Заявка відправлена!',
+    meCall: 'Ми зв\'яжемося з вами найближчим часом',
+    call: 'Зателефонувати',
+    callback: 'Замовити зворотний дзвінок',
+    contactsLeave: 'Залиште свої контактні дані, і ми зв\'яжемося з вами найближчим часом',
+    name: "Ім'я",
+    enterName: "Введіть ваше ім'я",
+    phone: 'Телефон',
+    sendForm: 'Відправити заявку'
+  };
 
  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -55,8 +69,8 @@ const CallbackDialog = ({ variant = "outline", size = "default", className }: Ca
   }
 
   toast({
-    title: t('send.ok'),
-    description: t('me.call'),
+    title: translations.sendOk,
+    description: translations.meCall,
   });
 
   setName("");
@@ -69,34 +83,34 @@ const CallbackDialog = ({ variant = "outline", size = "default", className }: Ca
       <DialogTrigger asChild>
         <Button variant={variant} size={size} className={className}>
           <Phone className="h-4 w-4" />
-          {t('call')}
+          {translations.call}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-             {t('callback')}
+             {translations.callback}
           </DialogTitle>
           <DialogDescription>
-               {t('contacts.leave')}
+               {translations.contactsLeave}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
             <Label htmlFor="callback-name">
-              {t('name')}
+              {translations.name}
             </Label>
             <Input
               id="callback-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={t('enter.name')}
+              placeholder={translations.enterName}
               required
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="callback-phone">
-               {t('phone')}
+               {translations.phone}
             </Label>
             <Input
               id="callback-phone"
@@ -108,7 +122,7 @@ const CallbackDialog = ({ variant = "outline", size = "default", className }: Ca
             />
           </div>
           <Button type="submit" className="w-full">
-             {t('send.form')}
+             {translations.sendForm}
           </Button>
         </form>
       </DialogContent>

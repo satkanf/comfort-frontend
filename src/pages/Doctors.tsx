@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,10 @@ import { Search } from 'lucide-react';
 import BookingDialog from '@/components/BookingDialog';
 import CallbackDialog from '@/components/CallbackDialog';
 import DoctorCard from '@/components/DoctorCard';
+import { useTranslations } from "@/hooks/useTranslations";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/translations";
+import { getBaseUrl } from "@/utils/baseUrl";
 
 interface DoctorData {
   id: number;
@@ -24,120 +27,114 @@ interface DoctorData {
   };
   category_names?: string[];
    _embedded?: any;
-  slug: string
+  slug?: string
 }
 
-const Doctors = ({ language = "uk" }) => {
-  const [doctors, setDoctors] = useState<DoctorData[]>([]);
+const Doctors = ({ language: propLanguage = "uk" }) => {
+  const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
-  const [specialties, setSpecialties] = useState<string[]>(['all']);
-  const { t } = useLanguage();
+  const { language } = useTranslations();
+  const { language: currentLanguage } = useLanguage();
 
-  const fetchDoctors = async () => {
-    try {
-      setLoading(true);
-
-      const response = await fetch(
-        "https://comfort.satkan.site/wp-json/wp/v2/doctors?per_page=100&_embed=1&acf_format=standard"
-      );
-
-      if (!response.ok) {
-        throw new Error("Error fetching doctors");
-      }
-
-      const data = await response.json();
-
-      const processedDoctors: DoctorData[] = data.map((doctor: any) => {
-        const categoryNames =
-          doctor._embedded?.["wp:term"]?.[0]?.map((cat: any) => cat.name) || [];
-
-        return {
-          id: doctor.id,
-          title: doctor.title,
-          categories: doctor.categories || [],
-          acf: doctor.acf || {},
-          category_names: categoryNames,
-          slug: doctor.slug,
-
-          // ⬇⬇⬇ Главное исправление — вытягиваем фото врача из featured_media
-          _embedded: {
-            featured: doctor._embedded?.["wp:featuredmedia"]?.[0] || null
-          }
-        };
-      });
-
-      setDoctors(processedDoctors);
-
-      const allSpecialties = new Set<string>();
-      processedDoctors.forEach((doctor) => {
-        doctor.category_names?.forEach((spec) => allSpecialties.add(spec));
-      });
-
-      setSpecialties(["all", ...Array.from(allSpecialties)]);
-    } catch (err) {
-      console.error("Ошибка загрузки докторов:", err);
-
-      setDoctors(getFallbackDoctors());
-      setSpecialties(["all", "Косметологи", "Дерматологи", "Трихологи"]);
-    } finally {
-      setLoading(false);
-    }
+  const getTranslations = () => {
+    return {
+      pageTitle: translations.pages.doctors.allDoctors[language as "uk" | "ru"],
+      pageSubtitle: 'Команда висококваліфікованих фахівців з багаторічним досвідом та індивідуальним підходом до кожного пацієнта',
+      all: translations.common.all[language as "uk" | "ru"],
+      searchPlaceholder: translations.pages.doctors.searchPlaceholder[language as "uk" | "ru"],
+      filterBySpecialty: translations.pages.doctors.filterBySpecialty[language as "uk" | "ru"],
+      experience: translations.pages.doctors.experience[language as "uk" | "ru"],
+      bookAppointment: translations.pages.doctors.bookAppointment[language as "uk" | "ru"],
+      noDoctors: translations.pages.doctors.noDoctors[language as "uk" | "ru"],
+      needConsultation: language === 'ru' ? 'Нужна консультация?' : 'Потрібна консультація?',
+      consultationText: language === 'ru'
+        ? 'Позвоните нам или заполните форму онлайн-записи, и мы подберем для вас лучшего специалиста'
+        : 'Зателефонуйте нам або заповніть форму онлайн-запису, і ми підберемо для вас найкращого спеціаліста'
+    };
   };
 
+  const pageTranslations = getTranslations();
+
+  // Загружаем всех врачей из API
   useEffect(() => {
-    fetchDoctors();
-  }, []);
+    const fetchDoctors = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-  const getFallbackDoctors = (): DoctorData[] => {
-    return [
-      {
-        id: 1,
-        title: { rendered: "Доктор Іванова Ольга" },
-        categories: [1],
-        acf: {
-          doctor_avatar: "",
-          doctor_info: "Лікар-косметолог з 10-річним досвідом. Спеціалізація: ін'єкційна косметологія, лікування акне.",
-          doctor_info_ru: "Врач-косметолог с 10-летним опытом. Специализация: инъекционная косметология, лечение акне.",
-          doctor_specialization: "Косметолог",
-          doctor_experience: "10 років"
-        },
-        category_names: ["Косметологи"]
-      },
-      {
-        id: 2,
-        title: { rendered: "Доктор Петренко Максим" },
-        categories: [2],
-        acf: {
-          doctor_avatar: "",
-          doctor_info: "Спеціаліст з апаратної косметології. Досвід роботи 8 років.",
-          doctor_info_ru: "Специалист по аппаратной косметологии. Опыт работы 8 лет.",
-          doctor_specialization: "Апаратна косметологія",
-          doctor_experience: "8 років"
-        },
-        category_names: ["Апаратні косметологи"]
+        const baseUrl = getBaseUrl();
+        const doctorsUrl = `${baseUrl}/wp-json/wp/v2/doctors?per_page=100&_embed=1&acf_format=standard&lang=${currentLanguage}`;
+        const response = await fetch(doctorsUrl, {
+          method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Обрабатываем данные - сохраняем featured_media для использования в компоненте
+        const processedDoctors = data.map((doctor: any) => {
+          const embeddedMedia = doctor._embedded?.["wp:featuredmedia"]?.[0];
+          const categoryNames = doctor._embedded?.["wp:term"]?.[0]?.map((cat: any) => cat.name) || [];
+
+          return {
+            ...doctor,
+            _embedded: {
+              featured: embeddedMedia || null,
+              featuredMediaId: doctor.featured_media || null
+            },
+            category_names: categoryNames,
+          };
+        });
+
+        setDoctors(processedDoctors);
+
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch doctors');
+        setDoctors([]);
+      } finally {
+        setLoading(false);
       }
-    ];
-  };
+    };
 
-  // useEffect(() => {
-  //   fetchDoctors();
-  // }, []);
+    fetchDoctors();
+  }, [currentLanguage]);
+
+  // Получаем специальности из загруженных врачей
+  const specialties = useMemo(() => {
+    if (!doctors.length) return ['all'];
+
+    const allSpecialties = new Set<string>();
+    doctors.forEach((doctor) => {
+      doctor.category_names?.forEach((spec) => allSpecialties.add(spec));
+    });
+
+    return ["all", ...Array.from(allSpecialties)];
+  }, [doctors]);
+
 
   // Фильтрация докторов
   const filteredDoctors = doctors.filter(doctor => {
     const matchesSearch = doctor.title.rendered.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSpecialty = selectedSpecialty === 'all' || 
+    const matchesSpecialty = selectedSpecialty === 'all' ||
                             (doctor.category_names && doctor.category_names.includes(selectedSpecialty));
-    
+
     return matchesSearch && matchesSpecialty;
   });
 
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header />
+        <Header postId="" />
         <main className="flex-1">
           <section className="py-16 bg-gradient-to-br from-medical-gray-light via-background to-secondary/30">
             <div className="container">
@@ -165,19 +162,17 @@ const Doctors = ({ language = "uk" }) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <Header postId="" />
       <main className="flex-1">
         {/* Hero Section */}
         <section className="py-16 bg-gradient-to-br from-medical-gray-light via-background to-secondary/30">
           <div className="container">
             <div className="max-w-3xl mx-auto text-center space-y-4">
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-                {language === "uk" ? "Наші Лікарі" : "Наши Врачи"}
+                {pageTranslations.pageTitle}
               </h1>
               <p className="text-lg text-muted-foreground">
-                {language === "uk" 
-                  ? "Команда висококваліфікованих фахівців з багаторічним досвідом та індивідуальним підходом до кожного пацієнта"
-                  : "Команда высококвалифицированных специалистов с многолетним опытом и индивидуальным подходом к каждому пациенту"}
+                {pageTranslations.pageSubtitle}
               </p>
             </div>
           </div>
@@ -195,14 +190,14 @@ const Doctors = ({ language = "uk" }) => {
                     size="sm"
                     onClick={() => setSelectedSpecialty(specialty)}
                   >
-                    {specialty === 'all' ? t('all') : specialty}
+                    {specialty === 'all' ? pageTranslations.all : specialty}
                   </Button>
                 ))}
               </div>
               <div className="relative w-full md:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder={t('search.doc')}
+                  placeholder={pageTranslations.searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
@@ -218,8 +213,8 @@ const Doctors = ({ language = "uk" }) => {
             {filteredDoctors.length > 0 ? (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredDoctors.map((doctor) => (
-                  <DoctorCard 
-                    key={doctor.id} 
+                  <DoctorCard
+                    key={doctor.id}
                     doctor={doctor}
                     language={language}
                   />
@@ -228,9 +223,7 @@ const Doctors = ({ language = "uk" }) => {
             ) : (
               <div className="text-center py-12">
                 <p className="text-lg text-muted-foreground">
-                  {language === "uk" 
-                    ? "Не знайдено лікарів за вашим запитом"
-                    : "Не найдено врачей по вашему запросу"}
+                  {pageTranslations.noDoctors}
                 </p>
               </div>
             )}
@@ -241,16 +234,14 @@ const Doctors = ({ language = "uk" }) => {
         <section className="py-16 bg-gradient-to-br from-primary/5 to-accent/5">
           <div className="container text-center">
             <h2 className="text-3xl font-bold mb-4">
-              {language === "uk" ? "Потрібна консультація?" : "Нужна консультация?"}
+              {pageTranslations.needConsultation}
             </h2>
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              {language === "uk" 
-                ? "Зателефонуйте нам або заповніть форму онлайн-запису, і ми підберемо для вас найкращого спеціаліста"
-                : "Позвоните нам или заполните форму онлайн-записи, и мы подберем для вас лучшего специалиста"}
+              {pageTranslations.consultationText}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <BookingDialog />
-              <CallbackDialog size="lg" variant="secondary" />
+              <CallbackDialog size="lg" variant="outline" />
             </div>
           </div>
         </section>

@@ -4,13 +4,14 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export interface DoctorCardData {
   id: number;
   title: {
     rendered: string;
   };
-  slug: string; // ← обязательно есть
+  slug?: string;
   _embedded?: any;
   acf?: {
     doctor_avatar?: string;
@@ -39,14 +40,26 @@ const DoctorCard: React.FC<DoctorCardProps> = ({ doctor, language = "uk" }) => {
     return String(field || '');
   };
 
-  const specialization = getSafeString(acf?.doctor_info?.doctor_specialization);
-  const experience = getSafeString(acf?.doctor_info?.doctor_experience);
+  // Выбираем данные в зависимости от языка
+  const doctorInfo = language === 'ru' && acf?.doctor_info_ru
+    ? acf.doctor_info_ru
+    : acf?.doctor_info;
+
+  const specialization = getSafeString(
+    typeof doctorInfo === 'object'
+      ? doctorInfo?.doctor_specialization
+      : doctorInfo
+  );
+  const experience = getSafeString(
+    typeof doctorInfo === 'object'
+      ? doctorInfo?.doctor_experience
+      : doctorInfo
+  );
   const avatar =
   doctor._embedded?.featured?.media_details?.sizes?.medium?.source_url ||
   doctor._embedded?.featured?.source_url ||
   "";
   const category = category_names?.[0] || '';
-  console.log(avatar)
   return (
     <Card
       className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer h-full flex flex-col"

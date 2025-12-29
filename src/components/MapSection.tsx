@@ -1,45 +1,22 @@
-import { useEffect, useState } from "react";
 import { MapPin, Phone, Clock, Mail } from "lucide-react";
+import { useMultilangContacts } from "@/hooks/useMultilangContacts";
 
 const MapSection = () => {
-  const [homeContactData, sethomeContactData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { contactsData, loading, error } = useMultilangContacts();
 
-  useEffect(() => {
-    const fetchHome = async () => {
-      try {
-        const response = await fetch("https://comfort.satkan.site/wp-json/custom/v1/page/contacts?_embed");
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const data = await response.json();
-        sethomeContactData(data);
-      } catch (err) {
-        setError(err.message || "Ошибка при загрузке");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHome();
-  }, []);
-    if (loading) {
-    return <div>Загрузка...</div>;
+  if (loading) {
+    return <div>Завантаження...</div>;
   }
 
-  if (error) {
-    return <div>Ошибка: {error}</div>;
-  }
-
-  if (!homeContactData) {
+  if (error || !contactsData) {
     return null;
   }
 
-const location = homeContactData?.acf?.location;
-const email = homeContactData?.acf?.email;
-const workingHours = homeContactData?.acf?.working_hours;
-const titleBlock = homeContactData.acf?.block_contacts;
+const location = contactsData?.location;
+const email = contactsData?.email;
+const workingHours = contactsData?.working_hours;
+const titleBlock = contactsData?.block_contacts;
+const social = contactsData?.social;
 
 
   return (
@@ -48,9 +25,9 @@ const titleBlock = homeContactData.acf?.block_contacts;
       <div className="container mx-auto px-4">
   
           <div className="text-center mb-12"  >
-          <h2 className="text-4xl font-bold text-foreground mb-4">{titleBlock.block_contacts_title}</h2>
+          <h2 className="text-4xl font-bold text-foreground mb-4">{titleBlock?.block_contacts_title}</h2>
           <p className="text-muted-foreground text-lg">
-          {titleBlock.block_contacts_subtitle}
+          {titleBlock?.block_contacts_subtitle}
           </p>
         </div>
         
@@ -65,7 +42,7 @@ const titleBlock = homeContactData.acf?.block_contacts;
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="Comfort Clinic Location"
+                title="Розташування клініки Comfort"
               ></iframe>
             </div>
 
@@ -77,9 +54,9 @@ const titleBlock = homeContactData.acf?.block_contacts;
                   </div>
                   
                     <div>
-                      <h3 className="font-semibold text-lg mb-2">{location.location_address}</h3>
+                      <h3 className="font-semibold text-lg mb-2">{location?.location_address}</h3>
                       <p className="text-muted-foreground">
-                        {location.location_value}
+                        {location?.location_value}
                       </p>
                     </div>
                  
@@ -94,12 +71,11 @@ const titleBlock = homeContactData.acf?.block_contacts;
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-2">Телефон</h3>
-                    {homeContactData.acf?.phone.map((item,index) => (
-                      <a key={index} href={`mailto:${item.phone_value}`} style={{ display: 'block' }} className="text-muted-foreground hover:text-primary transition-colors">
+                    {contactsData?.phone?.map((item,index) => (
+                      <a key={index} href={`tel:${item.phone_value}`} style={{ display: 'block' }} className="text-muted-foreground hover:text-primary transition-colors">
                         {item.phone_number}
                       </a>
                     ))}
-                    
                   </div>
                 </div>
               </div>
@@ -110,9 +86,9 @@ const titleBlock = homeContactData.acf?.block_contacts;
                     <Mail className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">{email.email_address}</h3>
-                    <a href={`mailto:${email.email_value}`} className="text-muted-foreground hover:text-primary transition-colors">
-                      {email.email_value}
+                    <h3 className="font-semibold text-lg mb-2">{email?.email_address}</h3>
+                    <a href={`mailto:${email?.email_value}`} className="text-muted-foreground hover:text-primary transition-colors">
+                      {email?.email_value}
                     </a>
                   </div>
                 </div>
@@ -124,20 +100,26 @@ const titleBlock = homeContactData.acf?.block_contacts;
                     <Clock className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">{workingHours.working_hours_name}</h3>
+                    <h3 className="font-semibold text-lg mb-2">{workingHours?.working_hours_name}</h3>
                     <div className="text-muted-foreground space-y-1">
-                      {workingHours.working_hours_value
-                        .split('\n')
-                        .map((line, i) => (
-                          <p key={i}>{line}</p>
-                      ))}
+                      {workingHours?.working_hours_value &&
+                        workingHours.working_hours_value
+                          .split('\n')
+                          .map((line, i) => (
+                            <p key={i}>{line}</p>
+                          ))
+                      }
                     </div>
                   </div>
                 </div>
               </div>
+
+
             </div>
           </div>
+
         
+
       </div>
     </section>
 

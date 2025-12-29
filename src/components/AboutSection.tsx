@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import { Heart, Award, Users, Clock } from "lucide-react";
-import {useMultilangPage} from "@/hooks/useMultilangPage.ts";
+import {useMultilangPage} from "@/hooks/useMultilangPage";
 
 const AboutSection = () => {
     const { pageData, loading, error } = useMultilangPage('golovna');
-    
+
     if (loading) {
       return <div></div>;
     }
-  
+
     if (error) {
       return <div>Ошибка: {error}</div>;
     }
-  
+
     if (!pageData) {
       return null;
     }
@@ -36,7 +36,7 @@ const AboutSection = () => {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
                   {/* <Heart className="w-8 h-8 text-primary" /> */}
                   <img src={el.about_advantages_icon} alt={el.about_advantages_title} className="w-8 h-8 text-primary" />
-                  
+
                 </div>
                 <h3 className="text-xl font-semibold mb-2"> {el.about_advantages_title}</h3>
                 <p className="text-muted-foreground"> {el.about_advantages_desc}</p>

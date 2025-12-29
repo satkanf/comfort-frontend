@@ -1,10 +1,11 @@
 // components/ServicesSection.tsx
 import { useNavigate } from "react-router-dom";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { useMultilangServices } from "@/hooks/useMultilangServices";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Hexagon } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/translations";
 
 interface TaxonomyTerm {
   id: number;
@@ -105,7 +106,7 @@ const ServiceCard = ({ service, language }: { service: Service; language: string
 
 const ServicesSection = ({ acfFieldName = "about_services_add" }: ServiceSectionProps) => {
   const navigate = useNavigate();
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
 
   // Используем хук для мультиязычных услуг
   const {
@@ -117,57 +118,20 @@ const ServicesSection = ({ acfFieldName = "about_services_add" }: ServiceSection
   } = useMultilangServices(acfFieldName);
 
   // Переводы для UI (используем данные из блока или дефолтные)
-  const getTranslations = () => {
-    const defaultTranslations = {
-      title: {
-        uk: 'Наші послуги',
-        ru: 'Наши услуги',
-        en: 'Our Services'
-      },
-      subtitle: {
-        uk: 'Широкий спектр медичних послуг для турботи про ваше здоров\'я та красу',
-        ru: 'Широкий спектр медицинских услуг для заботы о вашем здоровье и красоте',
-        en: 'A wide range of medical services to care for your health and beauty'
-      },
-      allServices: {
-        uk: 'Всі послуги',
-        ru: 'Все услуги',
-        en: 'All Services'
-      },
-      loading: {
-        uk: 'Завантаження послуг...',
-        ru: 'Загрузка услуг...',
-        en: 'Loading services...'
-      },
-      error: {
-        uk: 'Помилка завантаження',
-        ru: 'Ошибка загрузки',
-        en: 'Loading error'
-      },
-      noServices: {
-        uk: 'Послуги відсутні',
-        ru: 'Услуги отсутствуют',
-        en: 'No services available'
-      }
-    };
-
-    return {
-      title: blockData?.title || defaultTranslations.title[language],
-      subtitle: blockData?.description || defaultTranslations.subtitle[language],
-      allServices: defaultTranslations.allServices[language],
-      loading: defaultTranslations.loading[language],
-      error: defaultTranslations.error[language],
-      noServices: defaultTranslations.noServices[language]
-    };
+  const uiTranslations = {
+    title: blockData?.title || translations.pages.home.services.title[language as "uk" | "ru"],
+    subtitle: blockData?.description || translations.pages.home.services.subtitle[language as "uk" | "ru"],
+    allServices: translations.pages.home.services.allServices[language as "uk" | "ru"],
+    loading: translations.common.loading[language as "uk" | "ru"],
+    error: translations.common.error[language as "uk" | "ru"],
+    noServices: 'Послуги відсутні' // Пока оставим статический, можно добавить в translations
   };
-
-  const translations = getTranslations();
 
   if (loading) {
     return (
         <div className="py-16 md:py-24 bg-background">
-          <div className="container text-center">
-            <p>{translations.loading}</p>
+        <div className="container text-center">
+          <p>{uiTranslations.loading}</p>
             <div className="mt-4 text-sm text-gray-500">
               Найдено ID услуг: {serviceIds.length}
             </div>
@@ -182,7 +146,7 @@ const ServicesSection = ({ acfFieldName = "about_services_add" }: ServiceSection
           <div className="container text-center">
             <div className="max-w-md mx-auto p-6 border border-red-200 rounded-lg bg-red-50">
               <h3 className="text-lg font-semibold text-red-800 mb-2">
-                {translations.error}
+                {uiTranslations.error}
               </h3>
               <p className="text-red-600 text-sm mb-4">{error}</p>
               <Button
@@ -199,18 +163,24 @@ const ServicesSection = ({ acfFieldName = "about_services_add" }: ServiceSection
   }
 
   if (!services.length) {
-    console.log('No services found:', {
-      serviceIds,
-      servicesCount: services.length,
-      language
-    });
-
     return (
         <div className="py-16 md:py-24 bg-background">
           <div className="container text-center">
-            <p className="text-gray-500">{translations.noServices}</p>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
+              {uiTranslations.title}
+            </h2>
+            <p className="text-gray-500 mb-4">{uiTranslations.noServices}</p>
             <div className="mt-4 text-sm text-gray-400">
               Язык: {language}, Найдено ID: {serviceIds.length}
+            </div>
+            <div className="mt-6">
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+                size="sm"
+              >
+                Оновити сторінку
+              </Button>
             </div>
           </div>
         </div>
@@ -222,11 +192,11 @@ const ServicesSection = ({ acfFieldName = "about_services_add" }: ServiceSection
         <div className="container">
           <div className="text-center space-y-4 mb-12">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              {translations.title}
+              {uiTranslations.title}
             </h2>
-            {translations.subtitle && (
+            {uiTranslations.subtitle && (
                 <p className="text-lg text-muted-foreground max-w-[700px] mx-auto">
-                  {translations.subtitle}
+                  {uiTranslations.subtitle}
                 </p>
             )}
           </div>
@@ -247,7 +217,7 @@ const ServicesSection = ({ acfFieldName = "about_services_add" }: ServiceSection
                 variant="outline"
                 onClick={() => navigate("/services")}
             >
-              {translations.allServices}
+              {uiTranslations.allServices}
             </Button>
           </div>
         </div>

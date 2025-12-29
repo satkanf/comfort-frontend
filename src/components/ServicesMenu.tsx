@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import MenuTree from "./MenuTree";
+import { useTranslations } from "@/hooks/useTranslations";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   NavigationMenu,
@@ -11,47 +12,78 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
+import { getBaseUrl } from "@/utils/baseUrl";
+
 
 const ServicesMenu = () => {
   const { language } = useLanguage();
   const [menu, setMenu] = useState([]);
 
-  const serviceCategories = [
-    {
-      title: language === 'uk' ? 'Медичні послуги' : 'Медицинские услуги',
-      services: [
-        { id: 'gynecology', name: language === 'uk' ? 'Гінекологія' : 'Гинекология' },
-        { id: 'therapy', name: language === 'uk' ? 'Терапія' : 'Терапия' },
-        { id: 'pediatrics', name: language === 'uk' ? 'Педіатрія' : 'Педиатрия' },
-        { id: 'cardiology', name: language === 'uk' ? 'Кардіологія' : 'Кардиология' },
-      ]
-    },
-    {
-      title: language === 'uk' ? 'Діагностика' : 'Диагностика',
-      services: [
-        { id: 'ultrasound', name: language === 'uk' ? 'УЗД діагностика' : 'УЗИ диагностика' },
-      ]
-    },
-    {
-      title: language === 'uk' ? 'Естетична медицина' : 'Эстетическая медицина',
-      services: [
-        { id: 'cosmetology', name: language === 'uk' ? 'Косметологія' : 'Косметология' },
-        { id: 'dermatology', name: language === 'uk' ? 'Дерматологія' : 'Дерматология' },
-      ]
-    },
-    {
-      title: language === 'uk' ? 'Спеціалізовані послуги' : 'Специализированные услуги',
-      services: [
-        { id: 'ophthalmology', name: language === 'uk' ? 'Офтальмологія' : 'Офтальмология' },
-      ]
-    }
-  ];
+  const getTranslations = () => {
+    const defaultTranslations = {
+      allServices: {
+        uk: 'Переглянути всі послуги',
+        ru: 'Посмотреть все услуги'
+      }
+    };
+
+    return {
+      allServices: defaultTranslations.allServices[language as "uk" | "ru"]
+    };
+  };
+
+  const translations = getTranslations();
+
+  // serviceCategories пока не используются, оставляем на будущее или для возможной доработки
 
   useEffect(() => {
-    fetch("https://comfort.satkan.site/wp-json/menus/v1/menus/header-menu")
-      .then(res => res.json())
-      .then(data => setMenu(data.items || []));
-  }, []);
+    const fetchMenu = async () => {
+      try {
+        const baseUrl = getBaseUrl();
+        const menuSuffix = language === 'ru' ? '-ru' : '';
+        const requestUrl = `${baseUrl}/wp-json/menus/v1/menus/header-menu${menuSuffix}`;
+
+        const response = await fetch(requestUrl, {
+          method: 'GET',
+                headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+                }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setMenu(data.items || []);
+      } catch (error) {
+        // При ошибке пробуем загрузить меню без языкового суффикса
+        try {
+          const baseUrl = getBaseUrl();
+          const fallbackUrl = `${baseUrl}/wp-json/menus/v1/menus/header-menu`;
+
+          const response = await fetch(fallbackUrl, {
+              method: 'GET',
+                headers: {
+                  'Accept': 'application/json',
+                }
+          });
+
+          if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          setMenu(data.items || []);
+        } catch (fallbackError) {
+          console.error('Fallback menu loading failed:', fallbackError);
+        }
+      }
+    };
+
+    fetchMenu();
+  }, [language]);
   return (
     <NavigationMenu>
       <NavigationMenuList>
@@ -59,10 +91,10 @@ const ServicesMenu = () => {
           {menu
             .filter(item => item.classes?.includes("dropdown"))
             .map((item, index) => (
-              <NavigationMenuTrigger key={index} className="text-hover">
+              <NavigationMenuTrigger key={item.ID || `dropdown-${index}`} className="text-hover">
                 {item.title}
               </NavigationMenuTrigger>
-            
+
           ))}
           <NavigationMenuContent>
             <div className="p-6">
@@ -70,7 +102,7 @@ const ServicesMenu = () => {
                   {menu
                     .filter(item => item.classes?.includes("dropdown"))
                     .map((item, index) => (
-                      <MenuTree key={index} items={item.child_items} />
+                      <MenuTree key={item.ID || `tree-${index}`} items={item.child_items} />
                     ))
                   }
               </div>
@@ -82,7 +114,7 @@ const ServicesMenu = () => {
                       "block select-none rounded-md p-3 text-center font-semibold leading-none no-underline outline-none transition-colors hover:bg-primary hover:text-primary-foreground"
                     )}
                   >
-                    {language === 'uk' ? 'Переглянути всі послуги' : 'Посмотреть все услуги'}
+                    {translations.allServices}
                   </Link>
                 </NavigationMenuLink>
               </div>

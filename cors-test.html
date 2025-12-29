@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Test</title>
+</head>
+<body>
+    <h1>CORS Test for WordPress API</h1>
+    <button id="testButton">Test API Call</button>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('testButton').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+
+            try {
+                // Test with proxy (dev mode)
+                const devResponse = await fetch('/wp-json/wp/v2/pages?per_page=1');
+                if (devResponse.ok) {
+                    const data = await devResponse.json();
+                    resultDiv.innerHTML = '<h2>✅ Dev Proxy Works!</h2><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                    return;
+                }
+            } catch (error) {
+                console.log('Dev proxy failed:', error);
+            }
+
+            try {
+                // Test direct request
+                const directResponse = await fetch('https://comfort.satkan.site/wp-json/wp/v2/pages?per_page=1');
+                if (directResponse.ok) {
+                    const data = await directResponse.json();
+                    resultDiv.innerHTML = '<h2>✅ Direct Request Works!</h2><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                } else {
+                    resultDiv.innerHTML = '<h2>❌ CORS Error</h2><p>Direct request failed with status: ' + directResponse.status + '</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<h2>❌ CORS Error</h2><p>' + error.message + '</p>';
+                console.error('CORS test failed:', error);
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+

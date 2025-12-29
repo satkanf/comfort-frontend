@@ -1,28 +1,26 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-medical.jpg";
-import { ArrowRight } from "lucide-react";
 import BookingDialog from "@/components/BookingDialog";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "react-router-dom";
-import { useMultilangBlock } from '@/hooks/useMultilangBlock';
+import { useMultilangPage } from "@/hooks/useMultilangPage";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Hero = () => {
-  const { language } = useLanguage();
-  // const {  heroData, loading, error } = useMultilangPage('golovna');
-  const { data: heroData, loading } = useMultilangBlock('hero', 'golovna');
+  const { language, t } = useLanguage();
 
-  if (loading) {
-    return <div></div>;
-  }
+  // Temporary: use static data for testing
+  const mockData = {
+    acf: {
+      hero: {
+        hero_title: language === 'uk' ? 'Клініка краси та здоров\'я' : 'Клиника красоты и здоровья',
+        hero_subtitle: language === 'uk' ? 'Сучасна медицина та косметологія в центрі Ірпеня' : 'Современная медицина и косметология в центре Ирпеня',
+        hero_description: language === 'uk' ? 'Професійні лікарі, сучасне обладнання, індивідуальний підхід до кожного пацієнта' : 'Профессиональные врачи, современное оборудование, индивидуальный подход к каждому пациенту'
+      }
+    }
+  };
 
-  if (error) {
-    return <div>Ошибка: {error}</div>;
-  }
-
-  if (! heroData) {
-    return null;
-  }
+  const heroData = mockData.acf.hero;
   
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-medical-gray-light via-background to-secondary/30">
@@ -31,38 +29,51 @@ const Hero = () => {
           <div className="flex flex-col justify-center space-y-6">
             
               <div className="space-y-4">
-              
                 <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary">
-                 { heroData.acf?.hero.hero_subtitle}
+                 {heroData.hero_subtitle}
                 </div>
                 <h1 className="text-4xl font-bold tracking-tight sm:text-5xl xl:text-6xl">
-                  { heroData.acf?.hero.hero_title}
+                  {heroData.hero_title}
                 </h1>
                 <p className="text-lg text-muted-foreground max-w-[600px]">
-                 { heroData.acf?.hero.hero_desc}
+                 {heroData.hero_description}
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <BookingDialog 
-                    triggerText={language === 'uk' ? 'Записатися на прийом' : 'Записаться на прием'}
+                <BookingDialog
+                    triggerText={t(
+                      "hero.bookAppointment",
+                      language === "uk" ? "Записатися на прийом" : "Записаться на прием"
+                    )}
                 />
                 <Button size="lg" variant="outline" className="text-base" asChild>
                   <Link to="/services">
-                    {language === 'uk' ? 'Наші послуги' : 'Наши услуги'}
+                    {t(
+                      "hero.ourServices",
+                      language === "uk" ? "Наші послуги" : "Наши услуги"
+                    )}
                   </Link>
                 </Button>
               </div>
               <div className="grid grid-cols-3 gap-4 pt-4 border-t">
-                { heroData.acf?.hero.stats.map((item, index )=>(
-                  <div key={index}>
-                      <div className="text-3xl font-bold text-primary">{item.stats_value}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {item.stats_name}
-                      </div>
+                <div>
+                  <div className="text-3xl font-bold text-primary">500+</div>
+                  <div className="text-sm text-muted-foreground">
+                    {language === 'uk' ? 'Задоволених клієнтів' : 'Довольных клиентов'}
                   </div>
-                 
-                ))};
-                  
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-primary">15+</div>
+                  <div className="text-sm text-muted-foreground">
+                    {language === 'uk' ? 'Років досвіду' : 'Лет опыта'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-primary">50+</div>
+                  <div className="text-sm text-muted-foreground">
+                    {language === 'uk' ? 'Видів послуг' : 'Видов услуг'}
+                  </div>
+                </div>
               </div>
               
           </div>

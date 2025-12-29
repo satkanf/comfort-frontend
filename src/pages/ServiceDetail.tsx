@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Clock } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslations } from "@/hooks/useTranslations";
 import BookingDialog from "@/components/BookingDialog";
 import SEO from "@/components/SEO";
 import doctor1 from "@/assets/doctor-1.jpg";
@@ -227,7 +227,7 @@ const servicesData: Record<string, ServiceData> = {
 const ServiceDetail = () => {
   const { serviceId } = useParams<{ serviceId: string }>();
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, t } = useTranslations();
   
   const service = serviceId ? servicesData[serviceId] : null;
 
@@ -238,11 +238,17 @@ const ServiceDetail = () => {
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">
-              {language === 'uk' ? 'Послугу не знайдено' : 'Услуга не найдена'}
+              {t(
+                "service.notFound",
+                language === "uk" ? "Послугу не знайдено" : "Услуга не найдена"
+              )}
             </h1>
             <Button onClick={() => navigate("/services")}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {language === 'uk' ? 'Повернутися до послуг' : 'Вернуться к услугам'}
+              {t(
+                "service.backToServices",
+                language === "uk" ? "Повернутися до послуг" : "Вернуться к услугам"
+              )}
             </Button>
           </div>
         </main>
@@ -284,7 +290,10 @@ const ServiceDetail = () => {
           <div className="container">
             <Button variant="ghost" onClick={() => navigate("/services")}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {language === 'uk' ? 'До всіх послуг' : 'Ко всем услугам'}
+              {t(
+                "service.toAllServices",
+                language === "uk" ? "До всіх послуг" : "Ко всем услугам"
+              )}
             </Button>
           </div>
         </section>
@@ -308,7 +317,10 @@ const ServiceDetail = () => {
                   <img src={service.image} alt={title} className="w-full h-[400px] object-cover rounded-lg shadow-lg" />
                   <div>
                     <h2 className="text-3xl font-bold mb-4">
-                      {language === 'uk' ? 'Про послугу' : 'Об услуге'}
+                      {t(
+                        "service.about",
+                        language === "uk" ? "Про послугу" : "Об услуге"
+                      )}
                     </h2>
                     <p className="text-lg text-muted-foreground leading-relaxed">
                       {fullDescription}
@@ -337,7 +349,10 @@ const ServiceDetail = () => {
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-3xl">
-                        {language === 'uk' ? 'Про послугу' : 'Об услуге'}
+                        {t(
+                          "service.about",
+                          language === "uk" ? "Про послугу" : "Об услуге"
+                        )}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -353,7 +368,10 @@ const ServiceDetail = () => {
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-3xl">
-                      {language === 'uk' ? 'Про послугу' : 'Об услуге'}
+                      {t(
+                        "service.about",
+                        language === "uk" ? "Про послугу" : "Об услуге"
+                      )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -372,7 +390,10 @@ const ServiceDetail = () => {
           <div className="container">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-3xl font-bold mb-8 text-center">
-                {language === 'uk' ? 'Ціни на послуги' : 'Цены на услуги'}
+                {t(
+                  "service.pricesTitle",
+                  language === "uk" ? "Ціни на послуги" : "Цены на услуги"
+                )}
               </h2>
               <Card>
                 <CardContent className="p-6">
@@ -401,7 +422,10 @@ const ServiceDetail = () => {
           <div className="container">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-3xl font-bold mb-8 text-center">
-                {language === 'uk' ? 'Наші лікарі' : 'Наши врачи'}
+                {t(
+                  "service.ourDoctors",
+                  language === "uk" ? "Наші лікарі" : "Наши врачи"
+                )}
               </h2>
               <div className="grid gap-6 md:grid-cols-2">
                 {service.doctors.map((doctor) => (
@@ -425,7 +449,10 @@ const ServiceDetail = () => {
                         </p>
                         <Button variant="outline" size="sm" asChild>
                           <Link to={`/doctors/${doctor.id}`}>
-                            {language === 'uk' ? 'Переглянути профіль' : 'Посмотреть профиль'}
+                            {t(
+                              "link.profile",
+                              language === "uk" ? "Переглянути профіль" : "Посмотреть профиль"
+                            )}
                           </Link>
                         </Button>
                       </div>
@@ -441,22 +468,34 @@ const ServiceDetail = () => {
           <div className="container">
             <div className="max-w-2xl mx-auto text-center">
               <h2 className="text-3xl font-bold mb-4">
-                {language === 'uk' ? 'Готові записатися на прийом?' : 'Готовы записаться на прием?'}
+                {t(
+                  "cta.readyToBook",
+                  language === "uk" ? "Готові записатися на прийом?" : "Готовы записаться на прием?"
+                )}
               </h2>
               <p className="text-muted-foreground mb-8">
-                {language === 'uk' 
-                  ? 'Наша команда фахівців готова надати вам кваліфіковану допомогу'
-                  : 'Наша команда специалистов готова предоставить вам квалифицированную помощь'}
+                {t(
+                  "cta.supportText",
+                  language === "uk"
+                    ? "Наша команда фахівців готова надати вам кваліфіковану допомогу"
+                    : "Наша команда специалистов готова предоставить вам квалифицированную помощь"
+                )}
               </p>
               <div className="flex gap-4 justify-center flex-wrap">
                 <BookingDialog 
                   preselectedService={serviceId}
-                  triggerText={language === 'uk' ? 'Записатися на консультацію' : 'Записаться на консультацию'}
+                  triggerText={t(
+                    "cta.bookConsultation",
+                    language === "uk" ? "Записатися на консультацію" : "Записаться на консультацию"
+                  )}
                 />
                 <Button size="lg" variant="outline" asChild>
                   <a href="tel:+380954220032">
                     <Clock className="mr-2 h-5 w-5" />
-                    {language === 'uk' ? 'Зателефонувати' : 'Позвонить'}
+                    {t(
+                      "call",
+                      language === "uk" ? "Зателефонувати" : "Позвонить"
+                    )}
                   </a>
                 </Button>
               </div>

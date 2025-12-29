@@ -146,39 +146,52 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({
 
   // Инициализация языка
   useEffect(() => {
+    const detectLanguageFromUrl = () => {
+      const path = window.location.pathname;
+
+      // Проверяем префикс языка в URL (например /ru/page или /uk/page)
+      const langMatch = path.match(/^\/(uk|ru)(\/|$)/);
+      if (langMatch) {
+        return langMatch[1]; // 'uk' или 'ru'
+      }
+
+      // Проверяем поддомен (ru.example.com или uk.example.com)
+      const hostname = window.location.hostname;
+      const subdomainMatch = hostname.match(/^(uk|ru)\./);
+      if (subdomainMatch) {
+        return subdomainMatch[1]; // 'uk' или 'ru'
+      }
+
+      return null;
+    };
+
+    // Приоритет: URL > localStorage > браузер > по умолчанию
+    const urlLang = detectLanguageFromUrl();
     const savedLang = localStorage.getItem('preferred_language');
     const browserLang = navigator.language.split('-')[0];
 
-    if (savedLang && ['uk', 'ru'].includes(savedLang)) {
+    if (urlLang && ['uk', 'ru'].includes(urlLang)) {
+      setLanguage(urlLang);
+    } else if (savedLang && ['uk', 'ru'].includes(savedLang)) {
       setLanguage(savedLang);
     } else if (browserLang === 'uk' || browserLang === 'ru') {
       setLanguage(browserLang);
     }
+    // else остается defaultLang = 'uk'
   }, []);
 
-  // Загрузка переводов
+  // Загрузка переводов - отключена, используем статические переводы в компонентах
   const loadTranslations = async (lang: string) => {
     if (translations[lang]) return; // Уже загружены
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-          `https://comfort.satkan.site/wp-json/custom/v1/translations/${lang}`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setTranslations(prev => ({
-          ...prev,
-          [lang]: data
-        }));
-      } else {
-        // Если endpoint не настроен, используем fallback
-        setTranslations(prev => ({
-          ...prev,
-          [lang]: {}
-        }));
-      }
+      // Пока используем только локальные переводы
+      // В будущем можно добавить загрузку с сервера
+      setTranslations(prev => ({
+        ...prev,
+        [lang]: {}
+      }));
     } catch (error) {
       console.error('Error loading translations:', error);
       setTranslations(prev => ({
@@ -190,20 +203,19 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({
     }
   };
 
-  // Загрузка переводов при смене языка
-  useEffect(() => {
-    loadTranslations(language);
-  }, [language]);
+  // Загрузка переводов при смене языка - отключена
+  // useEffect(() => {
+  //   loadTranslations(language);
+  // }, [language]);
 
   const changeLanguage = (lang: string) => {
     setLanguage(lang);
     localStorage.setItem('preferred_language', lang);
     document.documentElement.lang = lang; // Для accessibility
 
-    // Обновляем URL с учетом языка (опционально)
-    const url = new URL(window.location.href);
-    url.searchParams.set('lang', lang);
-    window.history.replaceState({}, '', url.toString());
+    // В клиентском приложении просто меняем язык без редиректа
+    // WordPress на сервере будет обрабатывать URL с языковыми префиксами
+    // Пользователь может вручную перейти на /ru/golovna для просмотра русской версии
   };
 
   // Функция перевода

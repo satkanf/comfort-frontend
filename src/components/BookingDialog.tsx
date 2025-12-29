@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useMultilangForms } from "@/hooks/useMultilangForms";
+import { getBaseUrl } from "@/utils/baseUrl";
 
 interface Category {
   id: number;
@@ -32,19 +33,48 @@ const BookingDialog = () => {
     specialtyText: ""
     
   });
-  const { t } = useLanguage();
+  const { formTranslations } = useMultilangForms();
+
+  const translations = formTranslations || {
+    callback: 'Записатися на прийом',
+    doctorsAppointment: 'Записатися на прийом',
+    fillForm: 'Заповніть форму і ми зв\'яжемося з вами найближчим часом',
+    name: 'Ім\'я',
+    enterName: 'Введіть ваше ім\'я',
+    phone: 'Телефон',
+    date: 'Дата',
+    time: 'Час',
+    specialtyDoctor: 'Спеціальність лікаря',
+    chooseSpecialist: 'Оберіть фахівця',
+    reception: 'Записатися',
+    error: 'Помилка'
+  };
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch("https://comfort.satkan.site/wp-json/wp/v2/category-doctors");
+        const baseUrl = getBaseUrl();
+        const requestUrl = `${baseUrl}/wp-json/wp/v2/category-doctors?lang=uk`; // TODO: use actual language
+
+        const response = await fetch(requestUrl, {
+          method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+        });
+
         if (!response.ok) {
-          throw new Error("Network response was not ok");
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         const data = await response.json();
-        setCategories(data);
-      } catch (err) {
-        setError(err.message || "Ошибка при загрузке");
+
+        const filteredCategories = data.filter((cat: any) => cat.acf?.show_in_form);
+        setCategories(filteredCategories);
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch categories');
+        setCategories([]); // Ensure categories is an empty array on error
       } finally {
         setLoading(false);
       }
@@ -78,10 +108,10 @@ const BookingDialog = () => {
     const json = await response.json();
     
     if (json.success) toast({
-      title: t('callback'),
-      description: t('callback'),
+      title: translations.callback,
+      description: translations.callback,
     });
-    else toast({title: "Помилка"})
+    else toast({title: translations.error})
     setOpen(false);
   };
 
@@ -91,25 +121,25 @@ const BookingDialog = () => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="lg">
-          {t('doctors.appointment')}
+          {translations.doctorsAppointment}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {t('doctors.appointment')}
+            {translations.doctorsAppointment}
           </DialogTitle>
           <DialogDescription>
-              {t('fill.form')}
+            {translations.fillForm}
           </DialogDescription>
           
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="name">{t('name')}*</Label>
+            <Label htmlFor="name">{translations.name}*</Label>
             <Input
               id="name"
-              placeholder={t('enter.name')}
+              placeholder={translations.enterName}
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -117,7 +147,7 @@ const BookingDialog = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">{t('phone')}*</Label>
+            <Label htmlFor="phone">{translations.phone}*</Label>
             <Input
               id="phone"
               type="tel"
@@ -130,7 +160,7 @@ const BookingDialog = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="date">{t('date')} *</Label>
+              <Label htmlFor="date">{translations.date} *</Label>
               <Input
                 id="date"
                 type="date"
@@ -141,7 +171,7 @@ const BookingDialog = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="time">{t('time')} *</Label>
+              <Label htmlFor="time">{translations.time} *</Label>
               <Input
                 id="time"
                 type="time"
@@ -153,7 +183,7 @@ const BookingDialog = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="specialty">{t('specialty.doctor')}</Label>
+            <Label htmlFor="specialty">{translations.specialtyDoctor}</Label>
             <Select value={formData.specialty} // здесь хранится slug
               onValueChange={(value) => {
                 // найти объект категории по slug
@@ -166,7 +196,7 @@ const BookingDialog = () => {
                 });
               }}>
               <SelectTrigger>
-                <SelectValue placeholder={t('choose.specialist')} />
+                <SelectValue placeholder={translations.chooseSpecialist} />
               </SelectTrigger>
               <SelectContent>
                 {categories
@@ -181,7 +211,7 @@ const BookingDialog = () => {
           </div>
 
           <Button type="submit" className="w-full">
-            {t('receprion')}
+            {translations.reception}
           </Button>
         </form>
       </DialogContent>

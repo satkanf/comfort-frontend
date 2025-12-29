@@ -25,20 +25,24 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
           <Routes>
+            <Route path="/" element={<Index />} />
             <Route path="/golovna" element={<Index />} />
             <Route path="/services" element={<ServicesPage />} />
-            <Route path="/serrvices/:poslugyId" element={<ServiceDetail />} />
+            <Route path="/services/:poslugyId" element={<ServiceDetail />} />
             <Route path="/doctors" element={<Doctors />} />
             <Route path="/doctors/:slug" element={<DoctorDetail />} />
-            <Route path="/likari/:slug" element={<DoctorDetail />} />
-            <Route path="/cziny" element={<Prices />} />
+            <Route path="/prices" element={<Prices />} />
             <Route path="/about" element={<About />} />
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/blog" element={<Blog />} />
-            <Route path="/akcziyi" element={<Promotions />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/promotion" element={<Promotions />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

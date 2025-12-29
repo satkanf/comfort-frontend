@@ -1,6 +1,44 @@
 // hooks/useMultilangServices.ts
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getBaseUrl } from "@/utils/baseUrl";
+
+// Маппинг slug'ов для разных языков
+const SLUG_MAPPING = {
+    golovna: {
+        uk: 'golovna',
+        ru: 'glavnaya'
+    },
+    poslugy: {
+        uk: 'poslugy',
+        ru: 'uslugi'
+    },
+    likari: {
+        uk: 'likari',
+        ru: 'vrachi'
+    },
+    aktsiyi: {
+        uk: 'aktsiyi',
+        ru: 'aktsii'
+    },
+    pro_nas: {
+        uk: 'pro_nas',
+        ru: 'o_nas'
+    },
+    tsini: {
+        uk: 'tsini',
+        ru: 'tseny'
+    },
+    kontakty: {
+        uk: 'kontakty',
+        ru: 'kontakty'
+    }
+};
+
+const getLocalizedSlug = (baseSlug, language) => {
+    const mapping = SLUG_MAPPING[baseSlug];
+    return mapping ? mapping[language] : baseSlug;
+};
 
 interface MultilangService {
     id: number;
@@ -32,7 +70,6 @@ export const useMultilangServices = (acfFieldName: string = 'about_services_add'
     const { language } = useLanguage();
     const [services, setServices] = useState<MultilangService[]>([]);
     const [serviceIds, setServiceIds] = useState<number[]>([]);
-    const [taxonomyTerms, setTaxonomyTerms] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [blockData, setBlockData] = useState<{
@@ -47,42 +84,61 @@ export const useMultilangServices = (acfFieldName: string = 'about_services_add'
                 setLoading(true);
                 setError(null);
 
-                console.log(`🔄 Загружаю услуги для языка: ${language}`);
+                // Гибридный подход: пробуем прокси, если не работает - прямые запросы
+                const baseUrl = getBaseUrl();
 
-                // Используем мультиязычный endpoint
-                const response = await fetch(
-                    `https://comfort.satkan.site/wp-json/multilang/v1/page/golovna?lang=${language}&embed=true`
-                );
+                const localizedSlug = getLocalizedSlug('golovna', language);
+
+                // Используем только стандартный WordPress REST API
+                const         requestUrl = `${baseUrl}/wp-json/wp/v2/pages?slug=${localizedSlug}&lang=${language}&_embed`;
+        const response = await fetch(requestUrl, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            }
+        });
 
                 if (!response.ok) {
-                    throw new Error(`Ошибка загрузки страницы: ${response.status}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const pageData = await response.json();
-                console.log('✅ Страница загружена:', pageData.title);
+
+                // Если это массив (стандартный endpoint), берем первый элемент
+                const page = Array.isArray(pageData) ? pageData[0] : pageData;
 
                 // Ищем блок с услугами
-                const servicesBlock = pageData.acf?.add_block?.find(
+                const servicesBlock = page.acf?.add_block?.find(
                     (block: ServiceBlock) => {
                         // Ищем по нескольким возможным названиям блоков
-                        const possibleBlocks = ['about_services', 'services', 'our_services'];
+                        const possibleBlocks = ['about_services', 'services', 'our_services', 'about_services_add'];
                         return possibleBlocks.includes(block.acf_fc_layout);
                     }
                 );
 
                 if (!servicesBlock) {
-                    console.warn('Блок услуг не найден на странице');
-                    setServiceIds([]);
-                    setBlockData(null);
+                    // Резервный механизм: загружаем все услуги (максимум 20)
+                    setServiceIds([]); // Пустой массив означает "загрузить все"
+                    setBlockData({
+                        title: language === 'uk' ? 'Наші послуги' : 'Наши услуги',
+                        description: language === 'uk' ? 'Перелік доступних послуг' : 'Список доступных услуг'
+                    });
                     return;
                 }
 
-                console.log('✅ Найден блок услуг:', servicesBlock.acf_fc_layout);
-
                 // Сохраняем данные блока (заголовок, описание)
                 setBlockData({
-                    title: servicesBlock.title || '',
-                    description: servicesBlock.description
+                    title: servicesBlock.about_services_title ||
+                          servicesBlock.title ||
+                          servicesBlock.acf?.about_services_title ||
+                          servicesBlock.acf?.title ||
+                          '',
+                    description: servicesBlock.about_services_desc ||
+                               servicesBlock.description ||
+                               servicesBlock.acf?.about_services_desc ||
+                               servicesBlock.acf?.description ||
+                               ''
                 });
 
                 // Получаем ID услуг
@@ -94,18 +150,32 @@ export const useMultilangServices = (acfFieldName: string = 'about_services_add'
                     servicesBlock.services.forEach((service: any) => {
                         if (service.ID) ids.push(service.ID);
                     });
-                } else if (servicesBlock[acfFieldName] && Array.isArray(servicesBlock[acfFieldName])) {
-                    // Структура 2: servicesBlock[acfFieldName] = [{ID: 1, post_title: "...", ...}]
-                    servicesBlock[acfFieldName].forEach((item: any) => {
+                } else if (servicesBlock.acf && servicesBlock.acf[acfFieldName] && Array.isArray(servicesBlock.acf[acfFieldName])) {
+                    // Структура 3: servicesBlock.acf[acfFieldName] = [{ID: 1, post_title: "...", ...}]
+                    servicesBlock.acf[acfFieldName].forEach((item: any) => {
                         if (item.ID) ids.push(item.ID);
+                    });
+                } else if (servicesBlock.acf && servicesBlock.acf.services && Array.isArray(servicesBlock.acf.services)) {
+                    // Структура 4: servicesBlock.acf.services = [{ID: 1, post_title: "...", ...}]
+                    servicesBlock.acf.services.forEach((item: any) => {
+                        if (item.ID) ids.push(item.ID);
+                    });
+                } else if (servicesBlock[acfFieldName] && Array.isArray(servicesBlock[acfFieldName])) {
+                    // Структура 2: servicesBlock[acfFieldName] = [{ID: 1, post_title: "...", ...}] или [1, 2, 3, ...]
+                    servicesBlock[acfFieldName].forEach((item: any) => {
+                        if (typeof item === 'number') {
+                            // Прямое число (ID)
+                            ids.push(item);
+                        } else if (item && typeof item === 'object' && item.ID) {
+                            // Объект с полем ID
+                            ids.push(item.ID);
+                        }
                     });
                 }
 
-                console.log(`Найдено ID услуг: ${ids.length}`, ids);
                 setServiceIds(ids);
 
             } catch (err: any) {
-                console.error('Ошибка при получении ID услуг:', err);
                 setError(err.message || 'Неизвестная ошибка');
                 setServiceIds([]);
             }
@@ -114,100 +184,94 @@ export const useMultilangServices = (acfFieldName: string = 'about_services_add'
         fetchServiceIds();
     }, [language, acfFieldName]);
 
-    // 2️⃣ Загружаем ACF данные для терминов таксономии
+    // 2️⃣ Загружаем ACF данные для терминов таксономии (отключено - endpoint не существует)
+    // useEffect(() => {
+    //     const fetchTaxonomyTerms = async () => {
+    //         try {
+    //             // Загружаем все термины таксономии с ACF полями
+    //             const baseUrl = getBaseUrl();
+    //             const response = await fetch(`${baseUrl}/wp-json/wp/v2/service-category?per_page=100&lang=${language}`);
+    //
+    //             if (!response.ok) {
+    //                 throw new Error(`HTTP error! status: ${response.status}`);
+    //             }
+    //
+    //             const data = await response.json();
+    //
+    //             // Для каждого термина загружаем ACF данные
+    //             const termsWithAcf = await Promise.all(
+    //                 data.map(async (term: any) => {
+    //                     try {
+    //                         const baseUrl = getBaseUrl();
+    //                         const acfResponse = await fetch(`${baseUrl}/wp-json/wp/v2/service-category/${term.id}?_fields=acf&lang=${language}`);
+    //
+    //                         if (!acfResponse.ok) {
+    //                             throw new Error(`HTTP error! status: ${acfResponse.status}`);
+    //                         }
+    //
+    //                         const acfData = await acfResponse.json();
+    //                         if (acfData) {
+    //                             return {
+    //                                 ...term,
+    //                                 acf: acfData.acf
+    //                             };
+    //                         }
+    //                     } catch (err) {
+    //                     }
+    //                     return term;
+    //                 })
+    //             );
+    //
+    //             setTaxonomyTerms(termsWithAcf);
+    //         } catch (err) {
+    //         }
+    //     };
+    //
+    //     if (language) {
+    //         fetchTaxonomyTerms();
+    //     }
+    // }, [language]);
+
+    // 3️⃣ Загружаем все услуги по массиву ID или все услуги если ID нет
     useEffect(() => {
-        const fetchTaxonomyTerms = async () => {
-            try {
-                // Загружаем все термины таксономии с ACF полями
-                const response = await fetch(
-                    `https://comfort.satkan.site/wp-json/wp/v2/services-caservices-catt?per_page=100&lang=${language}`
-                );
-
-                if (!response.ok) throw new Error("Network response was not ok");
-                const data = await response.json();
-
-                // Для каждого термина загружаем ACF данные
-                const termsWithAcf = await Promise.all(
-                    data.map(async (term: any) => {
-                        try {
-                            const acfResponse = await fetch(
-                                `https://comfort.satkan.site/wp-json/wp/v2/services-caservices-catt/${term.id}?_fields=acf&lang=${language}`
-                            );
-                            if (acfResponse.ok) {
-                                const acfData = await acfResponse.json();
-                                return {
-                                    ...term,
-                                    acf: acfData.acf
-                                };
-                            }
-                        } catch (err) {
-                            console.error(`Error fetching ACF for term ${term.id}:`, err);
-                        }
-                        return term;
-                    })
-                );
-
-                console.log('Taxonomy terms with ACF:', termsWithAcf.length);
-                setTaxonomyTerms(termsWithAcf);
-            } catch (err) {
-                console.error("Ошибка при загрузке терминов таксономии:", err);
-            }
-        };
-
-        if (language) {
-            fetchTaxonomyTerms();
-        }
-    }, [language]);
-
-    // 3️⃣ Загружаем все услуги по массиву ID
-    useEffect(() => {
-        if (!serviceIds.length || !language) {
+        if (!language) {
             setLoading(false);
             return;
         }
 
         const fetchServices = async () => {
             try {
-                console.log(`Загружаю услуги по ID: ${serviceIds.join(',')} для языка ${language}`);
+                const baseUrl = getBaseUrl();
+                let url;
 
-                // Используем WP REST API с параметром языка
-                const response = await fetch(
-                    `https://comfort.satkan.site/wp-json/wp/v2/services?include=${serviceIds.join(",")}&_embed&lang=${language}`
-                );
+                if (serviceIds.length > 0) {
+                    // Загружаем конкретные услуги по ID
+                    url = `${baseUrl}/wp-json/wp/v2/services?include=${serviceIds.join(",")}&_embed&lang=${language}`;
+                } else {
+                    // Резервный механизм: загружаем все услуги (ограничим до 20)
+                    url = `${baseUrl}/wp-json/wp/v2/services?per_page=20&_embed&lang=${language}`;
+                }
 
-                if (!response.ok) throw new Error("Network response was not ok");
-                const data = await response.json();
-                console.log(`✅ Загружено услуг: ${data.length}`);
-
-                // Обновляем услуги с ACF данными из терминов
-                const servicesWithAcf = data.map((service: any) => {
-                    // Находим категории для этой услуги
-                    const serviceCategories = service._embedded?.['wp:term']?.flat() || [];
-                    const filteredCategories = serviceCategories.filter((term: any) =>
-                        term.taxonomy === 'services-caservices-catt'
-                    );
-
-                    // Добавляем ACF данные из загруженных терминов
-                    const categoriesWithAcf = filteredCategories.map((category: any) => {
-                        const termWithAcf = taxonomyTerms.find((t: any) => t.id === category.id);
-                        return {
-                            ...category,
-                            acf: termWithAcf?.acf
-                        };
-                    });
-
-                    return {
-                        ...service,
-                        _embedded: {
-                            'wp:term': [categoriesWithAcf]
-                        }
-                    };
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors'
                 });
 
-                console.log('Services with ACF:', servicesWithAcf);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Услуги загружаются без дополнительных ACF данных из taxonomy
+                const servicesWithAcf = data;
+
                 setServices(servicesWithAcf);
             } catch (err: any) {
-                console.error("Ошибка при загрузке услуг:", err);
                 setError(err.message || 'Ошибка загрузки услуг');
             } finally {
                 setLoading(false);
@@ -215,7 +279,7 @@ export const useMultilangServices = (acfFieldName: string = 'about_services_add'
         };
 
         fetchServices();
-    }, [serviceIds, taxonomyTerms, language]);
+    }, [serviceIds, language]);
 
     return {
         services,

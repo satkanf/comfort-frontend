@@ -5,7 +5,7 @@ const MenuTree = ({ items, level = 0}) => {
  return (
     <>
       {items.map((item, index) => (
-        <div className="" key={index}>
+        <div className="" key={item.ID || `menu-item-${index}`}>
             
             <Link
                 to={item.url}

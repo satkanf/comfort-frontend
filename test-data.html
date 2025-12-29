@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Data Loading</title>
+</head>
+<body>
+    <h1>Testing Data Loading</h1>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('result');
+            try {
+                // Test main page data
+                const response = await fetch('/wp-json/wp/v2/pages?slug=golovna&_embed');
+                const data = await response.json();
+                result.innerHTML += '<h2>Main Page Data:</h2><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+
+                // Test services
+                const servicesResponse = await fetch('/wp-json/wp/v2/services?per_page=5&_embed');
+                const servicesData = await servicesResponse.json();
+                result.innerHTML += '<h2>Services Data:</h2><pre>' + JSON.stringify(servicesData, null, 2) + '</pre>';
+
+                // Test doctors
+                const doctorsResponse = await fetch('/wp-json/wp/v2/doctors?per_page=5&_embed');
+                const doctorsData = await doctorsResponse.json();
+                result.innerHTML += '<h2>Doctors Data:</h2><pre>' + JSON.stringify(doctorsData, null, 2) + '</pre>';
+
+            } catch (error) {
+                result.innerHTML = '<h2>Error:</h2><pre>' + error.message + '</pre>';
+            }
+        }
+
+        testAPI();
+    </script>
+</body>
+</html>
+

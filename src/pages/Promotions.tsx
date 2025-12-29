@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from "react-router-dom";
 import { Percent, Clock, Calendar, AlertCircle, ArrowRight } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/translations';
+import { getBaseUrl } from "@/utils/baseUrl";
 
 interface Promotion {
   id: number;
@@ -28,9 +31,9 @@ interface Promotion {
       promotion_price_new?: string;
       promotion_price_procent?: string;
     }
-    
     promotion_status?: string;
     promotion_except?: string; // Добавляем поле исключений
+    promotion_except_ru?: string; // Русский вариант исключений
   };
   _embedded?: {
     'wp:featuredmedia'?: Array<{
@@ -39,35 +42,87 @@ interface Promotion {
     }>;
   };
 }
+interface  PagePromotion {
+  id: number;
+  acf?: {
+    page_promotion_title: string,
+    page_promotion_subtitle: string
+  }
+}
 
 const Promotions = () => {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [pagePromotion, setPagePromotion] = useState<PagePromotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { language } = useLanguage();
+
+  const fetchPagePromotion = async () => {
+    try {
+      setLoading(true);
+
+      const baseUrl = getBaseUrl();
+      const requestUrl = `${baseUrl}/wp-json/wp/v2/pages?slug=promotion&lang=${language}&_embed&acf_format=standard`;
+
+      const response = await fetch(requestUrl, {
+        method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // API возвращает объект, а не массив, поэтому обрабатываем его как массив из одного элемента
+      const dataArray = Array.isArray(data) ? data : [data];
+
+      // Фильтруем некорректные данные
+      const validPromotions = dataArray.filter((promo: any) =>
+          promo && typeof promo === 'object' && (promo.title || promo.acf?.page_promotion_title)
+      );
+
+      setPagePromotion(validPromotions);
+
+    } catch (error) {
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const fetchPromotions = async () => {
     try {
       setLoading(true);
-      
-      const response = await fetch(
-        'https://comfort.satkan.site/wp-json/wp/v2/promotion?_embed&acf_format=standard&per_page=100'
-      );
-      
+
+      const baseUrl = getBaseUrl();
+      const requestUrl = `${baseUrl}/wp-json/wp/v2/promotion?_embed&acf_format=standard&per_page=100&lang=${language}`;
+
+      const response = await fetch(requestUrl, {
+        method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+      });
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      console.log('Данные акций:', data);
-      
+
       // Фильтруем некорректные данные
-      const validPromotions = data.filter((promo: any) => 
+      const validPromotions = data.filter((promo: any) =>
         promo && typeof promo === 'object' && promo.title
       );
-      
+
       setPromotions(validPromotions);
-      
+
     } finally {
       setLoading(false);
     }
@@ -84,21 +139,38 @@ const Promotions = () => {
 
   // Функция для безопасного получения заголовка
   const getSafeTitle = (promo: Promotion): string => {
-    return promo?.title?.rendered || 'Акція';
+    return promo?.title?.rendered || translations.pages.promotions.defaultTitle[language];
   };
 
-  // Функция для безопасного получения описания
+  // Функция для безопасного получения описания с учетом языка
   const getSafeDescription = (promo: Promotion): string => {
-    const acfDescription = getSafeString(promo.acf?.promotion_description);
-    if (acfDescription) return acfDescription;
-    
+    const ruDescription = getSafeString(promo.acf?.promotion_description_ru);
+    const ukDescription = getSafeString(promo.acf?.promotion_description);
+
+    let description = '';
+    if (language === 'ru' && ruDescription) {
+      description = ruDescription;
+    } else if (ukDescription) {
+      description = ukDescription;
+    } else if (ruDescription) {
+      description = ruDescription; // Fallback на русский
+    }
+
+    if (description) return description;
+
     const content = promo.content?.rendered || '';
     return content.replace(/<[^>]*>/g, '').substring(0, 150) + '...';
   };
 
-  // Функция для получения исключений
+  // Функция для получения исключений с учетом языка
   const getPromotionExcept = (promo: Promotion): string => {
-    return getSafeString(promo.acf?.promotion_except);
+    const ruExcept = getSafeString(promo.acf?.promotion_except_ru);
+    const ukExcept = getSafeString(promo.acf?.promotion_except);
+
+    if (language === 'ru' && ruExcept) {
+      return ruExcept;
+    }
+    return ukExcept || ruExcept; // Fallback на русский если украинский пустой
   };
 
   // Функция для форматирования даты
@@ -131,8 +203,9 @@ const Promotions = () => {
   };
 
   useEffect(() => {
+    fetchPagePromotion();
     fetchPromotions();
-  }, []);
+  }, [language]);
 
   if (loading) {
     return (
@@ -169,18 +242,41 @@ const Promotions = () => {
         <section className="py-20 bg-gradient-to-b from-medical-gray-light/30 to-background">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center mb-12">
-              <h1 className="text-5xl font-bold text-foreground mb-4">
-                Акції та спеціальні пропозиції
-              </h1>
-              <p className="text-muted-foreground text-lg">
-                Скористайтеся вигідними пропозиціями для турботи про своє здоров'я
-              </p>
-              {error && (
-                <p className="text-yellow-600 text-sm mt-2">
-                  Дані завантажено з резервного джерела
-                </p>
+              {pagePromotion.length > 0 ? (
+                  pagePromotion.map((promo, index) => {
+                    const promotionTitle = getSafeString(promo.acf?.page_promotion_title);
+                    const promotionSubtitle = getSafeString(promo.acf?.page_promotion_subtitle);
+
+                    // Якщо немає заголовка, пропускаємо
+                    if (!promotionTitle) return null;
+
+                    return (
+                        <div key={promo.id || `promo-${index}`} className="mb-8">
+                          <h1 className="text-5xl font-bold text-foreground mb-4">
+                            {promotionTitle}
+                          </h1>
+                          {promotionSubtitle && (
+                              <p className="text-muted-foreground text-lg">
+                                {promotionSubtitle}
+                              </p>
+                          )}
+                        </div>
+                    );
+                  })
+              ) : (
+                  // Fallback заголовки, если API не вернул данные
+                  <div className="mb-8">
+                    <h1 className="text-5xl font-bold text-foreground mb-4">
+                      {translations.pages.promotions.title[language]}
+                    </h1>
+                    <p className="text-muted-foreground text-lg">
+                      {translations.pages.promotions.subtitle[language]}
+                    </p>
+                  </div>
               )}
             </div>
+
+
           </div>
         </section>
 
@@ -197,7 +293,6 @@ const Promotions = () => {
                   const endDate = getSafeString(promo.acf?.promotion_price?.promotion_date);
                   const except = getPromotionExcept(promo);
                   const image = getPromotionImage(promo);
-                  console.log(discount)
                   return (
                     <Card
                       key={promo.id}
@@ -258,15 +353,15 @@ const Promotions = () => {
                         {endDate && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Clock className="w-4 h-4" />
-                            <span>Діє до {endDate}</span>
+                            <span>{translations.pages.promotions.validUntil[language]} {endDate}</span>
                           </div>
                         )}
 
-                        <Button 
+                        <Button
                           className="w-full mt-4"
                           onClick={() => navigate(`/promotions/${promo.id}`)}
                         >
-                          Детальніше
+                          {translations.pages.promotions.details[language]}
                           <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                       </CardContent>
@@ -277,14 +372,14 @@ const Promotions = () => {
             ) : (
               <div className="text-center py-12">
                 <p className="text-lg text-muted-foreground">
-                  Наразі немає активних акцій
+                  {translations.pages.promotions.noPromotions[language]}
                 </p>
               </div>
             )}
 
             <div className="mt-12 text-center max-w-2xl mx-auto">
               <p className="text-muted-foreground text-sm">
-                * Акції не сумуються з іншими знижками. Детальні умови уточнюйте при записі.
+                {translations.pages.promotions.disclaimer[language]}
               </p>
             </div>
           </div>
