@@ -8,19 +8,19 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 const Hero = () => {
   const { language, t } = useLanguage();
+  const { pageData, loading, error } = useMultilangPage('golovna');
 
-  // Temporary: use static data for testing
-  const mockData = {
-    acf: {
-      hero: {
-        hero_title: language === 'uk' ? 'Клініка краси та здоров\'я' : 'Клиника красоты и здоровья',
-        hero_subtitle: language === 'uk' ? 'Сучасна медицина та косметологія в центрі Ірпеня' : 'Современная медицина и косметология в центре Ирпеня',
-        hero_description: language === 'uk' ? 'Професійні лікарі, сучасне обладнання, індивідуальний підхід до кожного пацієнта' : 'Профессиональные врачи, современное оборудование, индивидуальный подход к каждому пациенту'
-      }
-    }
-  };
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+    </div>;
+  }
 
-  const heroData = mockData.acf.hero;
+  if (error || !pageData) {
+    return null;
+  }
+
+  const heroData = pageData.acf?.hero 
   
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-medical-gray-light via-background to-secondary/30">
@@ -36,7 +36,7 @@ const Hero = () => {
                   {heroData.hero_title}
                 </h1>
                 <p className="text-lg text-muted-foreground max-w-[600px]">
-                 {heroData.hero_description}
+                 {heroData.hero_desc}
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">

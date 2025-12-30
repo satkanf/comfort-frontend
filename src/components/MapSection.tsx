@@ -1,22 +1,54 @@
 import { MapPin, Phone, Clock, Mail } from "lucide-react";
 import { useMultilangContacts } from "@/hooks/useMultilangContacts";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const MapSection = () => {
   const { contactsData, loading, error } = useMultilangContacts();
+  const { language } = useLanguage();
+
+  console.log('MapSection: Component rendered');
+  console.log('MapSection: contactsData:', contactsData);
+  console.log('MapSection: loading:', loading, 'error:', error);
+
+  // Используем локализованные заголовки вместо ACF поля block_contacts
+  const pageTitle = language === 'ru' ? 'Контакты' : 'Контакти';
+  const pageSubtitle = language === 'ru' ? 'Свяжитесь с нами' : 'Зв\'яжіться з нами';
 
   if (loading) {
+    console.log('MapSection: Still loading contacts');
     return <div>Завантаження...</div>;
   }
 
   if (error || !contactsData) {
-    return null;
+    console.log('MapSection: Error or no contactsData:', error);
+    return <div>Error: {error}</div>;
   }
 
-const location = contactsData?.location;
+  console.log('MapSection: Rendering with contactsData');
+
+  try {
+    const location = contactsData?.location;
 const email = contactsData?.email;
 const workingHours = contactsData?.working_hours;
-const titleBlock = contactsData?.block_contacts;
 const social = contactsData?.social;
+
+  console.log('MapSection: Parsed data - location:', location, 'email:', email, 'workingHours:', workingHours, 'pageTitle:', pageTitle);
+
+  // Проверяем наличие обязательных данных
+  const hasRequiredData = location && email && workingHours;
+  console.log('MapSection: Has required data:', hasRequiredData);
+
+  if (!hasRequiredData) {
+    console.log('MapSection: Missing required data, showing fallback');
+    return (
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-4xl font-bold mb-4">Контакты</h2>
+          <p>Информация о контактах загружается...</p>
+        </div>
+      </section>
+    );
+  }
 
 
   return (
@@ -25,9 +57,9 @@ const social = contactsData?.social;
       <div className="container mx-auto px-4">
   
           <div className="text-center mb-12"  >
-          <h2 className="text-4xl font-bold text-foreground mb-4">{titleBlock?.block_contacts_title}</h2>
+          <h2 className="text-4xl font-bold text-foreground mb-4">{pageTitle}</h2>
           <p className="text-muted-foreground text-lg">
-          {titleBlock?.block_contacts_subtitle}
+          {pageSubtitle}
           </p>
         </div>
         
@@ -54,9 +86,9 @@ const social = contactsData?.social;
                   </div>
                   
                     <div>
-                      <h3 className="font-semibold text-lg mb-2">{location?.location_address}</h3>
+                      <h3 className="font-semibold text-lg mb-2">{location?.location_address || 'Адреса'}</h3>
                       <p className="text-muted-foreground">
-                        {location?.location_value}
+                        {location?.location_value || 'вул. Західна 6, Ірпінь'}
                       </p>
                     </div>
                  
@@ -86,9 +118,9 @@ const social = contactsData?.social;
                     <Mail className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">{email?.email_address}</h3>
-                    <a href={`mailto:${email?.email_value}`} className="text-muted-foreground hover:text-primary transition-colors">
-                      {email?.email_value}
+                    <h3 className="font-semibold text-lg mb-2">{email?.email_address || 'Email'}</h3>
+                    <a href={`mailto:${email?.email_value || 'info@comfort.clinic'}`} className="text-muted-foreground hover:text-primary transition-colors">
+                      {email?.email_value || 'info@comfort.clinic'}
                     </a>
                   </div>
                 </div>
@@ -100,15 +132,17 @@ const social = contactsData?.social;
                     <Clock className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">{workingHours?.working_hours_name}</h3>
+                    <h3 className="font-semibold text-lg mb-2">{workingHours?.working_hours_name || 'Графік роботи'}</h3>
                     <div className="text-muted-foreground space-y-1">
-                      {workingHours?.working_hours_value &&
+                      {workingHours?.working_hours_value ? (
                         workingHours.working_hours_value
                           .split('\n')
                           .map((line, i) => (
                             <p key={i}>{line}</p>
                           ))
-                      }
+                      ) : (
+                        <p>Пн-Пт: 9:00-18:00<br/>Сб: 9:00-15:00<br/>Нд: вихідний</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -124,6 +158,16 @@ const social = contactsData?.social;
     </section>
 
   );
+  } catch (renderError) {
+    console.error('MapSection: Render error:', renderError);
+    return (
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-red-600">Ошибка отображения контактов</p>
+        </div>
+      </section>
+    );
+  }
 };
 
 export default MapSection;
