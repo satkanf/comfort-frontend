@@ -5,7 +5,8 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Phone, Mail, MapPin, Calendar, Clock, Award } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { ArrowLeft, Phone, Mail, MapPin, Calendar, Clock, Award, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import BookingDialog from '@/components/BookingDialog';
 import { translations } from '@/translations';
@@ -61,6 +62,43 @@ const DoctorDetail = () => {
     const [certificates, setCertificates] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [selectedCertificate, setSelectedCertificate] = useState<string | null>(null);
+    const [selectedCertificateIndex, setSelectedCertificateIndex] = useState<number>(0);
+
+    // Функции для навигации по сертификатам
+    const goToPreviousCertificate = () => {
+        const newIndex = selectedCertificateIndex > 0 ? selectedCertificateIndex - 1 : certificates.length - 1;
+        setSelectedCertificateIndex(newIndex);
+        setSelectedCertificate(certificates[newIndex]);
+    };
+
+    const goToNextCertificate = () => {
+        const newIndex = selectedCertificateIndex < certificates.length - 1 ? selectedCertificateIndex + 1 : 0;
+        setSelectedCertificateIndex(newIndex);
+        setSelectedCertificate(certificates[newIndex]);
+    };
+
+    // Обработчик клавиш
+    useEffect(() => {
+        const handleKeyPress = (e: KeyboardEvent) => {
+            if (!selectedCertificate) return;
+
+            switch (e.key) {
+                case 'ArrowLeft':
+                    goToPreviousCertificate();
+                    break;
+                case 'ArrowRight':
+                    goToNextCertificate();
+                    break;
+                case 'Escape':
+                    setSelectedCertificate(null);
+                    break;
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyPress);
+        return () => document.removeEventListener('keydown', handleKeyPress);
+    }, [selectedCertificate, selectedCertificateIndex, certificates]);
 
     // Функция для получения URL сертификатов по ID
     const fetchCertificateUrls = async (certificateIds: number[]): Promise<string[]> => {
@@ -182,24 +220,33 @@ const DoctorDetail = () => {
 
                 setDoctor(processedDoctor);
 
-                // Получаем URL сертификатов, если они есть как ID
-                if (processedDoctor.acf?.doctor_certificates && Array.isArray(processedDoctor.acf.doctor_certificates)) {
-                    // Проверяем, являются ли элементы массива числами (ID)
-                    const certificateIds = processedDoctor.acf.doctor_certificates.filter((item): item is number =>
-                        typeof item === 'number'
-                    );
+                // Получаем URL сертификатов из ACF
+                let certificateUrls: string[] = [];
 
-                    if (certificateIds.length > 0) {
-                        const certificateUrls = await fetchCertificateUrls(certificateIds);
-                        setCertificates(certificateUrls);
-                    } else {
-                        // Если это уже URL, используем их напрямую
-                        const certificateUrls = processedDoctor.acf.doctor_certificates.filter((item): item is string =>
-                            typeof item === 'string' && item.startsWith('http')
-                        );
-                        setCertificates(certificateUrls);
-                    }
+                // Проверяем поле doctor_add_info с блоками сертификатов
+                if (processedDoctor.acf?.doctor_add_info && Array.isArray(processedDoctor.acf.doctor_add_info)) {
+                    processedDoctor.acf.doctor_add_info.forEach((block: any) => {
+                        if (block.acf_fc_layout === 'doctor_add_certificates' &&
+                            block.doctor_certificates &&
+                            Array.isArray(block.doctor_certificates)) {
+                            // Фильтруем только валидные URL
+                            const urls = block.doctor_certificates.filter((item): item is string =>
+                                typeof item === 'string' && item.startsWith('http')
+                            );
+                            certificateUrls.push(...urls);
+                        }
+                    });
                 }
+
+                // Также проверяем основное поле doctor_certificates (на случай если там URL)
+                if (processedDoctor.acf?.doctor_certificates && Array.isArray(processedDoctor.acf.doctor_certificates)) {
+                    const urls = processedDoctor.acf.doctor_certificates.filter((item): item is string =>
+                        typeof item === 'string' && item.startsWith('http')
+                    );
+                    certificateUrls.push(...urls);
+                }
+
+                setCertificates(certificateUrls);
 
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch doctor');
@@ -400,7 +447,7 @@ const DoctorDetail = () => {
                                     </h2>
                                     <Card>
                                         <CardContent className="pt-6">
-                                            <ul className="space-y-4 grid md:grid-cols-2 gap-6">
+                                            <ul className="space-y-4 grid gap-6">
                                                 {item.doctor_list_repeater && Array.isArray(item.doctor_list_repeater) && item.doctor_list_repeater.map((edu, idx) => (
                                                     <li key={idx} className="flex items-start gap-3">
                                                         <div className="h-2 w-2 rounded-full bg-primary mt-2 flex-shrink-0" />
@@ -425,13 +472,32 @@ const DoctorDetail = () => {
                                 <Award className="h-8 w-8 text-primary" />
                                 {language === 'ru' ? 'Сертификаты' : 'Сертифікати'}
                             </h2>
-                            <div className="relative">
+                            <div className="relative px-12">
+                                {/* Стрелки навигации снаружи слайдера */}
+                                <button className="certificate-swiper-button-prev absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                </button>
+                                <button className="certificate-swiper-button-next absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
+
                                 <Swiper
                                     modules={[Navigation, Pagination]}
                                     spaceBetween={20}
                                     slidesPerView={1}
-                                    navigation
-                                    pagination={{ clickable: true }}
+                                    loop={true}
+                                    navigation={{
+                                        prevEl: '.certificate-swiper-button-prev',
+                                        nextEl: '.certificate-swiper-button-next',
+                                    }}
+                                    pagination={{
+                                        clickable: true,
+                                        el: '.certificate-swiper-pagination',
+                                    }}
                                     breakpoints={{
                                         640: {
                                             slidesPerView: 2,
@@ -448,11 +514,14 @@ const DoctorDetail = () => {
                                         <SwiperSlide key={`certificate-${index}`}>
                                             <Card className="overflow-hidden">
                                                 <CardContent className="p-0">
-                                                    <div className="aspect-[4/3] bg-gray-100 flex items-center justify-center">
+                                                    <div className="aspect-[4/3] bg-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => {
+                                                        setSelectedCertificate(certUrl);
+                                                        setSelectedCertificateIndex(index);
+                                                    }}>
                                                         <img
                                                             src={certUrl}
                                                             alt={`${language === 'ru' ? 'Сертификат' : 'Сертифікат'} ${index + 1}`}
-                                                            className="w-full h-full object-contain"
+                                                            className="w-full h-full object-contain hover:scale-105 transition-transform duration-200"
                                                             onError={(e) => {
                                                                 e.currentTarget.style.display = 'none';
                                                                 e.currentTarget.parentElement!.innerHTML = `
@@ -468,6 +537,9 @@ const DoctorDetail = () => {
                                         </SwiperSlide>
                                     ))}
                                 </Swiper>
+
+                                {/* Пагинация ниже слайдера */}
+                                <div className="certificate-swiper-pagination flex justify-center mt-6 space-x-2 [&>.swiper-pagination-bullet]:w-3 [&>.swiper-pagination-bullet]:h-3 [&>.swiper-pagination-bullet]:bg-gray-300 [&>.swiper-pagination-bullet]:rounded-full [&>.swiper-pagination-bullet]:transition-all [&>.swiper-pagination-bullet]:duration-300 [&>.swiper-pagination-bullet-active]:bg-blue-500 [&>.swiper-pagination-bullet-active]:scale-125"></div>
                             </div>
                         </div>
                     </section>
@@ -499,6 +571,61 @@ const DoctorDetail = () => {
                 </section>
             </main>
             <Footer />
+
+            {/* Модальное окно для увеличенного просмотра сертификата (Fancybox-style) */}
+            <Dialog open={!!selectedCertificate} onOpenChange={() => setSelectedCertificate(null)}>
+                <DialogContent className="max-w-5xl max-h-[95vh] p-0 bg-black/95 border-none">
+                    <div className="relative w-full h-full flex items-center justify-center">
+                        {/* Кнопка закрытия */}
+                        <button
+                            onClick={() => setSelectedCertificate(null)}
+                            className="absolute top-4 right-4 z-20 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all duration-200 hover:scale-110"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        {/* Счетчик изображений */}
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                            {selectedCertificateIndex + 1} / {certificates.length}
+                        </div>
+
+                        {/* Стрелка влево */}
+                        {certificates.length > 1 && (
+                            <button
+                                onClick={goToPreviousCertificate}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-all duration-200 hover:scale-110"
+                            >
+                                <ChevronLeft className="w-6 h-6" />
+                            </button>
+                        )}
+
+                        {/* Стрелка вправо */}
+                        {certificates.length > 1 && (
+                            <button
+                                onClick={goToNextCertificate}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-all duration-200 hover:scale-110"
+                            >
+                                <ChevronRight className="w-6 h-6" />
+                            </button>
+                        )}
+
+                        {/* Изображение */}
+                        {selectedCertificate && (
+                            <img
+                                src={selectedCertificate}
+                                alt={`Сертификат ${selectedCertificateIndex + 1}`}
+                                className="max-w-full max-h-full object-contain animate-in fade-in duration-300"
+                                onClick={(e) => {
+                                    // Закрыть при клике вне изображения (только на фоне)
+                                    if (e.target === e.currentTarget) {
+                                        setSelectedCertificate(null);
+                                    }
+                                }}
+                            />
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

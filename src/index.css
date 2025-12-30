@@ -140,3 +140,37 @@ footer .lucide{
   max-width: 250px;
 }
 
+/* Кастомные стили для слайдера сертификатов */
+.certificate-swiper-pagination .swiper-pagination-bullet {
+  width: 12px;
+  height: 12px;
+  background: #d1d5db;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.certificate-swiper-pagination .swiper-pagination-bullet-active {
+  background: #3b82f6;
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+/* Стили для стрелок слайдера */
+.certificate-swiper-button-prev,
+.certificate-swiper-button-next {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.certificate-swiper-button-prev:hover,
+.certificate-swiper-button-next:hover {
+  transform: translateY(-1px) scale(1.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.certificate-swiper-button-prev:disabled,
+.certificate-swiper-button-next:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
