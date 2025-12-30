@@ -99,21 +99,73 @@ const DoctorDetail = () => {
                 setError(null);
 
                 const baseUrl = getBaseUrl();
-                const requestUrl = `${baseUrl}/wp-json/wp/v2/doctors?slug=${slug}&lang=${language}&_embed&acf_format=standard`;
 
-                const response = await fetch(requestUrl, {
+                // Сначала пробуем найти врача по slug и текущему языку
+                let requestUrl = `${baseUrl}/wp-json/wp/v2/doctors?slug=${slug}&lang=${language}&_embed&acf_format=standard`;
+
+                let response = await fetch(requestUrl, {
                     method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                }
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    }
                 });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                let data = await response.json();
 
-                const data = await response.json();
+                // Если врач не найден на текущем языке, ищем на другом языке и находим translation
+                if (data.length === 0) {
+                    console.log(`Doctor not found for slug "${slug}" and language "${language}". Trying to find translation.`);
+
+                    // Определяем другой язык
+                    const otherLanguage = language === 'uk' ? 'ru' : 'uk';
+
+                    // Ищем врача на другом языке
+                    const fallbackUrl = `${baseUrl}/wp-json/wp/v2/doctors?slug=${slug}&lang=${otherLanguage}&_embed&acf_format=standard`;
+                    const fallbackResponse = await fetch(fallbackUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (fallbackResponse.ok) {
+                        const fallbackData = await fallbackResponse.json();
+                        if (fallbackData.length > 0) {
+                            const fallbackDoctor = fallbackData[0];
+                            console.log(`Found doctor on other language:`, fallbackDoctor.translations);
+
+                            // Если есть translations, находим врача на текущем языке
+                            if (fallbackDoctor.translations && fallbackDoctor.translations[language]) {
+                                const translatedId = fallbackDoctor.translations[language];
+                                console.log(`Found translation ID: ${translatedId} for language ${language}`);
+
+                                const translationUrl = `${baseUrl}/wp-json/wp/v2/doctors/${translatedId}?_embed&acf_format=standard`;
+                                response = await fetch(translationUrl, {
+                                    method: 'GET',
+                                    headers: {
+                                        'Accept': 'application/json',
+                                        'Content-Type': 'application/json',
+                                    }
+                                });
+
+                                if (response.ok) {
+                                    data = [await response.json()];
+                                    console.log(`Successfully loaded translated doctor:`, data[0]?.title?.rendered);
+                                } else {
+                                    throw new Error('Failed to load translated doctor');
+                                }
+                            } else {
+                                throw new Error('No translation found for doctor');
+                            }
+                        } else {
+                            throw new Error('Doctor not found on any language');
+                        }
+                    } else {
+                        throw new Error('Doctor not found');
+                    }
+                }
 
                 if (data.length === 0) {
                     throw new Error('Doctor not found');
