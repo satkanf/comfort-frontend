@@ -64,8 +64,6 @@ export const useMultilangContacts = () => {
 
         // Сначала получаем ID страницы по slug, затем запрашиваем страницу с ACF по ID
         const slugRequestUrl = `${baseUrl}/wp-json/wp/v2/pages?slug=${localizedSlug}&lang=${language}&_fields=id`;
-        console.log('useMultilangContacts: Language:', language, 'Localized slug:', localizedSlug);
-        console.log('useMultilangContacts: Getting page ID from:', slugRequestUrl);
 
         const slugResponse = await fetch(slugRequestUrl, {
             method: 'GET',
@@ -80,19 +78,15 @@ export const useMultilangContacts = () => {
         }
 
         const slugData = await slugResponse.json();
-        console.log('useMultilangContacts: Slug response:', slugData);
-        console.log('useMultilangContacts: Slug response status:', slugResponse.status);
 
         if (!Array.isArray(slugData) || slugData.length === 0) {
             throw new Error('Page not found by slug');
         }
 
         const pageId = slugData[0].id;
-        console.log('useMultilangContacts: Found page ID:', pageId);
 
         // Теперь запрашиваем страницу по ID с ACF данными
         const requestUrl = `${baseUrl}/wp-json/wp/v2/pages/${pageId}?_embed`;
-        console.log('useMultilangContacts: Requesting page by ID:', requestUrl);
 
         const response = await fetch(requestUrl, {
             method: 'GET',
@@ -107,9 +101,6 @@ export const useMultilangContacts = () => {
         }
 
         const data = await response.json();
-        console.log('useMultilangContacts: Data received:', data);
-        console.log('useMultilangContacts: ACF data:', data?.acf);
-        console.log('useMultilangContacts: Setting contactsData to:', data.acf);
         setContactsData(data.acf);
         setError(null);
       } catch (err) {

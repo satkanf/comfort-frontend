@@ -6,25 +6,17 @@ const MapSection = () => {
   const { contactsData, loading, error } = useMultilangContacts();
   const { language } = useLanguage();
 
-  console.log('MapSection: Component rendered');
-  console.log('MapSection: contactsData:', contactsData);
-  console.log('MapSection: loading:', loading, 'error:', error);
-
   // Используем локализованные заголовки вместо ACF поля block_contacts
   const pageTitle = language === 'ru' ? 'Контакты' : 'Контакти';
   const pageSubtitle = language === 'ru' ? 'Свяжитесь с нами' : 'Зв\'яжіться з нами';
 
   if (loading) {
-    console.log('MapSection: Still loading contacts');
     return <div>Завантаження...</div>;
   }
 
   if (error || !contactsData) {
-    console.log('MapSection: Error or no contactsData:', error);
     return <div>Error: {error}</div>;
   }
-
-  console.log('MapSection: Rendering with contactsData');
 
   try {
     const location = contactsData?.location;
@@ -32,14 +24,10 @@ const email = contactsData?.email;
 const workingHours = contactsData?.working_hours;
 const social = contactsData?.social;
 
-  console.log('MapSection: Parsed data - location:', location, 'email:', email, 'workingHours:', workingHours, 'pageTitle:', pageTitle);
-
   // Проверяем наличие обязательных данных
   const hasRequiredData = location && email && workingHours;
-  console.log('MapSection: Has required data:', hasRequiredData);
 
   if (!hasRequiredData) {
-    console.log('MapSection: Missing required data, showing fallback');
     return (
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4 text-center">
