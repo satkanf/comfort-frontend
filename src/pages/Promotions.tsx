@@ -12,6 +12,7 @@ import { getBaseUrl } from "@/utils/baseUrl";
 
 interface Promotion {
   id: number;
+  slug: string;
   title?: {
     rendered: string;
   };
@@ -359,7 +360,7 @@ const Promotions = () => {
 
                         <Button
                           className="w-full mt-4"
-                          onClick={() => navigate(`/promotions/${promo.id}`)}
+                          onClick={() => navigate(`/promotion/${promo.slug}`)}
                         >
                           {translations.pages.promotions.details[language]}
                           <ArrowRight className="w-4 h-4 ml-2" />

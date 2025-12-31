@@ -1,28 +1,186 @@
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, Percent, ArrowLeft, CheckCircle } from "lucide-react";
+import { Clock, Percent, ArrowLeft, CheckCircle, ImageIcon } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getBaseUrl } from "@/utils/baseUrl";
 import BookingDialog from "@/components/BookingDialog";
 
-
+interface PromotionData {
+  id: number;
+  title: { rendered: string };
+  slug: string;
+  acf: {
+    promotion_image?: number;
+    promotion_except?: string;
+    promotion_price?: {
+      promotion_price_old: string;
+      promotion_price_new: string;
+      promotion_price_procent: string;
+      promotion_date: string;
+    };
+    promotion_content?: Array<{
+      acf_fc_layout: string;
+      promotion_desc: string;
+    }>;
+  };
+  translations?: { [key: string]: number };
+}
 
 const PromotionDetail = () => {
+  const { slug } = useParams();
   const navigate = useNavigate();
-  
- 
+  const { language } = useLanguage();
+  const [promotion, setPromotion] = useState<PromotionData | null>(null);
+  const [promotionImageUrl, setPromotionImageUrl] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if () {
+  // Функция для получения URL изображения по ID
+  const fetchPromotionImageUrl = async (imageId: number): Promise<string> => {
+    try {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/wp-json/wp/v2/media/${imageId}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const mediaData = await response.json();
+      return mediaData.guid?.rendered || mediaData.source_url || '';
+    } catch (err) {
+      return '';
+    }
+  };
+
+  useEffect(() => {
+    const fetchPromotion = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const baseUrl = getBaseUrl();
+
+        // Сначала пробуем найти акцию по slug и текущему языку
+        let requestUrl = `${baseUrl}/wp-json/wp/v2/promotion?slug=${slug}&lang=${language}&_embed`;
+
+        let response = await fetch(requestUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          }
+        });
+
+        let data = await response.json();
+
+        // Если акция не найдена на текущем языке, ищем на другом языке и находим translation
+        if (data.length === 0) {
+          // Определяем другой язык
+          const otherLanguage = language === 'uk' ? 'ru' : 'uk';
+
+          // Ищем акцию на другом языке
+          const fallbackUrl = `${baseUrl}/wp-json/wp/v2/promotion?slug=${slug}&lang=${otherLanguage}&_embed`;
+          const fallbackResponse = await fetch(fallbackUrl, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            }
+          });
+
+          if (fallbackResponse.ok) {
+            const fallbackData = await fallbackResponse.json();
+            if (fallbackData.length > 0) {
+              const fallbackPromotion = fallbackData[0];
+
+              // Если есть translations, находим акцию на текущем языке
+              if (fallbackPromotion.translations && fallbackPromotion.translations[language]) {
+                const translatedId = fallbackPromotion.translations[language];
+                const translationUrl = `${baseUrl}/wp-json/wp/v2/promotion/${translatedId}?_embed`;
+
+                response = await fetch(translationUrl, {
+                  method: 'GET',
+                  headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                  }
+                });
+
+                if (response.ok) {
+                  data = [await response.json()];
+                } else {
+                  throw new Error('Failed to load translated promotion');
+                }
+              } else {
+                throw new Error('No translation found for promotion');
+              }
+            } else {
+              throw new Error('Promotion not found on any language');
+            }
+          } else {
+            throw new Error('Promotion not found');
+          }
+        }
+
+        if (data.length === 0) {
+          throw new Error('Promotion not found');
+        }
+
+        const promotionData = data[0];
+        setPromotion(promotionData);
+
+        // Получаем URL изображения акции, если оно есть
+        if (promotionData.acf?.promotion_image) {
+          const imageUrl = await fetchPromotionImageUrl(promotionData.acf.promotion_image);
+          setPromotionImageUrl(imageUrl);
+        }
+
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch promotion');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (slug) {
+      fetchPromotion();
+    }
+  }, [slug, language]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !promotion) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4">Акцію не знайдено</h1>
-            <Button onClick={() => navigate("/promotions")}>
-              Повернутися до акцій
+            <h1 className="text-3xl font-bold mb-4">
+              {language === 'ru' ? 'Акция не найдена' : 'Акцію не знайдено'}
+            </h1>
+            <Button onClick={() => navigate("/promotion")}>
+              {language === 'ru' ? 'Вернуться к акциям' : 'Повернутися до акцій'}
             </Button>
           </div>
         </main>
@@ -36,33 +194,43 @@ const PromotionDetail = () => {
       <Header />
       <main className="flex-1">
         {/* Hero Banner */}
-        <section className="relative h-[400px] overflow-hidden">
-          <img
-            src={promotion.image}
-            alt={promotion.title}
-            className="w-full h-full object-cover"
-          />
+        <section className="relative h-[400px] overflow-hidden bg-gradient-to-r from-primary/20 to-accent/20">
+          {promotionImageUrl ? (
+            <img
+              src={promotionImageUrl}
+              alt={promotion.title.rendered}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-primary/20 to-accent/20">
+              <ImageIcon className="w-24 h-24 text-primary/40" />
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/50 to-transparent" />
           <div className="absolute bottom-8 left-0 right-0">
             <div className="container mx-auto px-4">
               <Button
                 variant="ghost"
-                onClick={() => navigate("/promotions")}
+                onClick={() => navigate("/promotion")}
                 className="mb-4 text-white hover:text-white hover:bg-white/20"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Назад до акцій
+                {language === 'ru' ? 'Назад к акциям' : 'Назад до акцій'}
               </Button>
               <div className="flex items-start gap-4">
-                <Badge className="bg-primary text-white text-xl px-6 py-3 shadow-lg">
-                  <Percent className="w-5 h-5 inline mr-2" />
-                  -{promotion.discount}
-                </Badge>
+                {promotion.acf?.promotion_price?.promotion_price_procent && (
+                  <Badge className="bg-primary text-white text-xl px-6 py-3 shadow-lg">
+                    <Percent className="w-5 h-5 inline mr-2" />
+                    {promotion.acf.promotion_price.promotion_price_procent}
+                  </Badge>
+                )}
                 <div>
                   <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
-                    {promotion.title}
+                    {promotion.title.rendered}
                   </h1>
-                  <p className="text-xl text-white/90">{promotion.description}</p>
+                  {promotion.acf?.promotion_except && (
+                    <p className="text-xl text-white/90">{promotion.acf.promotion_except}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -75,74 +243,57 @@ const PromotionDetail = () => {
             <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {/* Main Content */}
               <div className="md:col-span-2 space-y-8">
-                <Card>
-                  <CardContent className="p-8">
-                    <h2 className="text-2xl font-bold mb-4">Про акцію</h2>
-                    <p className="text-muted-foreground text-lg leading-relaxed">
-                      {promotion.fullDescription}
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-8">
-                    <h2 className="text-2xl font-bold mb-6">Що входить</h2>
-                    <ul className="space-y-3">
-                      {promotion.includes.map((item, index) => (
-                        <li key={index} className="flex items-start gap-3">
-                          <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                          <span className="text-muted-foreground">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-8">
-                    <h2 className="text-2xl font-bold mb-6">Умови акції</h2>
-                    <ul className="space-y-3">
-                      {promotion.conditions.map((condition, index) => (
-                        <li key={index} className="flex items-start gap-3">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-2" />
-                          <span className="text-muted-foreground">{condition}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
+                {promotion.acf?.promotion_content?.map((block, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-8">
+                      <div dangerouslySetInnerHTML={{ __html: block.promotion_desc }} />
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
 
               {/* Sidebar */}
               <div className="space-y-6">
                 <Card className="sticky top-4">
                   <CardContent className="p-6 space-y-6">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-2">Стара ціна</p>
-                      <p className="text-2xl line-through text-muted-foreground">
-                        {promotion.oldPrice}
-                      </p>
-                    </div>
+                    {promotion.acf?.promotion_price && (
+                      <>
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {language === 'ru' ? 'Старая цена' : 'Стара ціна'}
+                          </p>
+                          <p className="text-2xl line-through text-muted-foreground">
+                            {promotion.acf.promotion_price.promotion_price_old}
+                          </p>
+                        </div>
 
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-2">Ціна за акцією</p>
-                      <p className="text-4xl font-bold text-primary">
-                        {promotion.newPrice}
-                      </p>
-                    </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {language === 'ru' ? 'Цена по акции' : 'Ціна за акцією'}
+                          </p>
+                          <p className="text-4xl font-bold text-primary">
+                            {promotion.acf.promotion_price.promotion_price_new}
+                          </p>
+                        </div>
+                      </>
+                    )}
 
-                    <div className="flex items-center gap-2 text-muted-foreground py-4 border-y">
-                      <Clock className="w-5 h-5" />
-                      <div>
-                        <p className="text-sm">Діє до</p>
-                        <p className="font-semibold">{promotion.validUntil}</p>
+                    {promotion.acf?.promotion_price?.promotion_date && (
+                      <div className="flex items-center gap-2 text-muted-foreground py-4 border-y">
+                        <Clock className="w-5 h-5" />
+                        <div>
+                          <p className="text-sm">{language === 'ru' ? 'Действует до' : 'Діє до'}</p>
+                          <p className="font-semibold">{promotion.acf.promotion_price.promotion_date}</p>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
-                    <BookingDialog triggerText="Записатися на прийом" />
+                    <BookingDialog
+                      triggerText={language === 'ru' ? 'Записаться на прием' : 'Записатися на прийом'}
+                    />
 
                     <p className="text-xs text-muted-foreground text-center">
-                      * Акція не сумується з іншими знижками
+                      * {language === 'ru' ? 'Акция не суммируется с другими скидками' : 'Акція не сумується з іншими знижками'}
                     </p>
                   </CardContent>
                 </Card>

@@ -1,6 +1,10 @@
 import {Card} from "@/components/ui/card.tsx";
 import { useState, useEffect } from "react";
 import { fetchImageUrls } from "@/utils/api";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Pagination, Autoplay } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
 
 interface GalleryProps {
     pageData: any;
@@ -29,24 +33,57 @@ const Gallery: React.FC<GalleryProps> = ({ pageData }) => {
     return (
         <section className="py-12 bg-secondary/20">
             <div className="container">
-                <div className="grid md:grid-cols-3 gap-6">
-                    {galleryImages.length > 0 ? galleryImages.map((img, i) => (
-                        <Card key={i} className="overflow-hidden">
-                            <img
-                                src={img}
-                                alt="Інтер'єр клініки"
-                                className="w-full h-64 object-cover"
-                                onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
-                                }}
-                            />
-                        </Card>
-                    )) : (
-                        <div className="col-span-3 text-center py-8">
-                            <p>Завантаження зображень...</p>
-                        </div>
-                    )}
-                </div>
+                {galleryImages.length > 0 ? (
+                    <div className="relative">
+                        <Swiper
+                            modules={[Pagination, Autoplay]}
+                            spaceBetween={20}
+                            slidesPerView={1}
+                            loop={true}
+                            autoplay={{
+                                delay: 3000,
+                                disableOnInteraction: false,
+                            }}
+                            pagination={{
+                                clickable: true,
+                                el: '.gallery-pagination',
+                            }}
+                            breakpoints={{
+                                640: {
+                                    slidesPerView: 2,
+                                    spaceBetween: 20,
+                                },
+                                1024: {
+                                    slidesPerView: 3,
+                                    spaceBetween: 30,
+                                },
+                            }}
+                            className="gallery-swiper"
+                        >
+                            {galleryImages.map((img, i) => (
+                                <SwiperSlide key={i}>
+                                    <Card className="overflow-hidden">
+                                        <img
+                                            src={img}
+                                            alt={`Фото галереї ${i + 1}`}
+                                            className="w-full h-64 object-cover"
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                            }}
+                                        />
+                                    </Card>
+                                </SwiperSlide>
+                            ))}
+                        </Swiper>
+
+                        {/* Пагинация ниже слайдера */}
+                        <div className="gallery-pagination flex justify-center mt-6 space-x-2"></div>
+                    </div>
+                ) : (
+                    <div className="text-center py-8">
+                        <p>Завантаження зображень...</p>
+                    </div>
+                )}
             </div>
         </section>
     );

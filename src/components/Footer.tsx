@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import logo from "../assets/logo.png";
@@ -5,10 +6,64 @@ import FooterMenu from "./FooterMenu";
 import { useMultilangNavigation } from "@/hooks/useMultilangNavigation";
 import { useMultilangContacts } from "@/hooks/useMultilangContacts";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { fetchImageUrls } from "@/utils/api";
 
 const Footer = () => {
   const { navTranslations } = useMultilangNavigation();
   const { contactsData, loading: contactsLoading, error: contactsError } = useMultilangContacts();
+  const [socialIcons, setSocialIcons] = useState<{[key: number]: string}>({});
+
+  console.log('Footer: contactsData:', contactsData);
+  console.log('Footer: acf exists:', !!contactsData?.acf);
+  console.log('Footer: social data (acf):', contactsData?.acf?.social);
+  console.log('Footer: social data (direct):', contactsData?.social);
+  console.log('Footer: socialIcons state:', socialIcons);
+
+  // Загружаем URL изображений социальных сетей
+  useEffect(() => {
+    const loadSocialIcons = async () => {
+      console.log('Footer: Loading social icons...');
+
+      // Проверяем оба возможных пути к данным
+      const socialData = contactsData?.acf?.social || contactsData?.social;
+      console.log('Footer: Using social data from:', socialData === contactsData?.acf?.social ? 'acf.social' : 'direct social');
+
+      if (socialData && Array.isArray(socialData)) {
+        console.log('Footer: Found social data:', socialData);
+        const iconIds: (number | string)[] = [];
+        socialData.forEach((social: any) => {
+          if (social.social_icon) {
+            console.log('Footer: Adding social icon ID:', social.social_icon);
+            iconIds.push(social.social_icon);
+          }
+        });
+
+        console.log('Footer: Icon IDs to load:', iconIds);
+
+        if (iconIds.length > 0) {
+          const iconUrls = await fetchImageUrls(iconIds);
+          console.log('Footer: Loaded icon URLs:', iconUrls);
+          const iconMap: {[key: number]: string} = {};
+          socialData.forEach((social: any, index: number) => {
+            if (social.social_icon && iconUrls[index]) {
+              iconMap[social.social_icon] = iconUrls[index];
+              console.log('Footer: Mapped icon', social.social_icon, 'to URL:', iconUrls[index]);
+            }
+          });
+          console.log('Footer: Final icon map:', iconMap);
+          setSocialIcons(iconMap);
+        }
+      } else {
+        console.log('Footer: No social data found');
+      }
+    };
+
+    if (contactsData) {
+      loadSocialIcons();
+    } else {
+      console.log('Footer: No contactsData yet');
+    }
+  }, [contactsData]);
 
   const translations = navTranslations || {
     footerTitle: 'Комфорт Медікал',
@@ -42,26 +97,33 @@ const Footer = () => {
               {translations.footerTagline}
             </p>
             <div className="flex gap-4">
-              {contactsData?.acf?.social?.map((item,index) =>(
-                <a key={index}
-                  href={item.social_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-social bg-secondary/20 text-primary hover:bg-secondary/40 hover:text-white transition-colors"
-                >
-                  <img src={item.social_icon} alt={item.social_name} className="h-4 w-4 text-primary" />
-                </a>
-              )) || (
-                // Fallback social links
-                <>
-                  <a href="#" className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary/20 text-primary hover:bg-secondary/40">
-                    <span className="text-sm">📘</span>
+              {(contactsData?.acf?.social || contactsData?.social)?.map((item,index) => {
+                console.log('Footer: Rendering social item:', item, 'icon URL:', socialIcons[item.social_icon]);
+                return (
+                  <a key={index}
+                    href={item.social_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-social bg-secondary/20 text-primary hover:bg-secondary/40 hover:text-white transition-colors"
+                  >
+                    {socialIcons[item.social_icon] ? (
+                      <img
+                        src={socialIcons[item.social_icon]}
+                        alt={item.social_name}
+                        className="h-4 w-4 object-contain"
+                        onError={(e) => {
+                          console.log('Footer: Image failed to load for', item.social_name);
+                          e.currentTarget.style.display = 'none';
+                          // Fallback to icon
+                          e.currentTarget.parentElement!.innerHTML = '<span class="text-primary text-sm">🔗</span>';
+                        }}
+                      />
+                    ) : (
+                      <span className="text-primary text-sm">🔗</span>
+                    )}
                   </a>
-                  <a href="#" className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary/20 text-primary hover:bg-secondary/40">
-                    <span className="text-sm">📷</span>
-                  </a>
-                </>
-              )}
+                );
+              })}
             </div>
           </div>
 
@@ -106,10 +168,10 @@ const Footer = () => {
               <div className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
                 <span className="text-primary-foreground">
-                  {contactsData?.location?.location_value || 'вул. Західна 6, Ірпінь'}
+                  {contactsData?.location?.location_value}
                 </span>
               </div>
-              {(contactsData?.phone || [{ phone_number: '+38 (095) 422 00 32', phone_value: '+380954220032' }]).map((item, index) => (
+              {contactsData?.phone.map((item, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-primary flex-shrink-0" />
                   <a href={`tel:${item.phone_value}`} className="text-primary-foreground text-hover transition-colors">

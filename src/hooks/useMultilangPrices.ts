@@ -5,7 +5,7 @@ import { getBaseUrl } from "@/utils/baseUrl";
 interface PriceService {
   price_label: string;
   price_label_ru?: string;
-  price_value: string;
+  price_value?: string; // Может быть пустым
 }
 
 interface PriceItem {
@@ -27,7 +27,7 @@ interface TransformedPriceCategory {
   services: Array<{
     name: string;
     nameRu: string;
-    price: string;
+    price?: string; // Может быть пустым
   }>;
 }
 
@@ -88,11 +88,11 @@ export const useMultilangPrices = () => {
 
         // Преобразуем price_list в массив услуг
         const services = item.acf.price_list
-          .filter(priceItem => priceItem.price_label && priceItem.price_value)
+          .filter(priceItem => priceItem.price_label) // Убираем только элементы без названия
           .map(priceItem => ({
             name: priceItem.price_label,
             nameRu: priceItem.price_label_ru || priceItem.price_label,
-            price: priceItem.price_value
+            price: priceItem.price_value || "" // price_value может быть пустым
           }));
 
         // Если есть услуги, добавляем категорию

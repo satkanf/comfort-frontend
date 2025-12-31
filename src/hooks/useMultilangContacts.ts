@@ -10,7 +10,7 @@ interface ContactPhone {
 interface ContactSocial {
   social_name: string;
   social_link: string;
-  social_icon: string;
+  social_icon: any;
 }
 
 interface ContactLocation {

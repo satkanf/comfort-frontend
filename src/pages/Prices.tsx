@@ -50,7 +50,7 @@ const PricesPage = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        <section className="py-20 bg-gradient-to-b from-medical-gray-light/30 to-background">
+        <section className="pt-20 bg-gradient-to-b from-medical-gray-light/30 to-background">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center mb-12">
               <h1 className="text-5xl font-bold text-foreground mb-4">
@@ -63,7 +63,7 @@ const PricesPage = () => {
           </div>
         </section>
 
-        <section className="py-20">
+        <section className="pb-20">
           <div className="container mx-auto px-4">
             {priceCategories.length > 0 ? (
               <Tabs defaultValue={priceCategories[0]?.id} className="max-w-6xl mx-auto">
@@ -72,7 +72,7 @@ const PricesPage = () => {
                     <TabsTrigger
                       key={category.id}
                       value={category.id}
-                      className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap"
+                      className="data-[state=active]:bg-primary border data-[state=active]:text-primary-foreground whitespace-nowrap"
                     >
                       {category.category}
                     </TabsTrigger>
@@ -89,12 +89,16 @@ const PricesPage = () => {
                               key={index}
                               className="flex justify-between items-center py-4 border-b last:border-0 hover:bg-muted/50 transition-colors px-4 rounded"
                             >
-                              <span className="text-foreground font-medium flex-1">
-                                {service.name}
+                              <span className="text-foreground font-medium flex-1" dangerouslySetInnerHTML={{ __html: service.name }}>
+
                               </span>
-                              <span className="font-bold text-primary text-lg whitespace-nowrap ml-4">
-                                {service.price}
-                              </span>
+                              <div
+                                  className="flex items-center gap-3 font-bold text-primary text-lg whitespace-nowrap ml-4 text-sm"
+                                  dangerouslySetInnerHTML={{
+                                    __html: service.price ?
+                                      service.price : ""
+                                  }}
+                              />
                             </div>
                           ))}
                         </div>

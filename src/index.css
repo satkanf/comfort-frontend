@@ -155,6 +155,21 @@ footer .lucide{
   transform: scale(1.2);
 }
 
+/* Кастомные стили для слайдера галереи */
+.gallery-pagination .swiper-pagination-bullet {
+  width: 12px;
+  height: 12px;
+  background: #d1d5db;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.gallery-pagination .swiper-pagination-bullet-active {
+  background: #3b82f6;
+  opacity: 1;
+  transform: scale(1.2);
+}
+
 /* Стили для стрелок слайдера */
 .certificate-swiper-button-prev,
 .certificate-swiper-button-next {
