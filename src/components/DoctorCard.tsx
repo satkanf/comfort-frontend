@@ -56,6 +56,7 @@ const DoctorCard: React.FC<DoctorCardProps> = ({ doctor, language = "uk" }) => {
       : doctorInfo
   );
   const avatar =
+  doctor.acf?.doctor_avatar ||
   doctor._embedded?.featured?.media_details?.sizes?.medium?.source_url ||
   doctor._embedded?.featured?.source_url ||
   "";
