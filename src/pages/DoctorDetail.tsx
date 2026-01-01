@@ -396,13 +396,14 @@ const DoctorDetail = () => {
 
                             <div className="md:col-span-2 space-y-6">
                                 <div>
-                                    <Badge className="mb-3">{doctor.category_names?.[0] || doctorInfo.specialization}</Badge>
+                                    <Badge className="mb-3">{doctor.category_names?.[0]}</Badge>
                                     <h1 className="text-4xl font-bold mb-2">{doctor.title.rendered}</h1>
                                     {doctorInfo.experience && doctorInfo.experience.trim() && (
                                         <p className="text-muted-foreground">
                                             {(language === 'ru' ? 'Опыт:' : 'Досвід:')}: {doctorInfo.experience}
                                         </p>
                                     )}
+                                    <p className="pt-12 text-lg">{doctorInfo.specialization}</p>
                                 </div>
 
                                 {doctorInfo.fullInfo && (

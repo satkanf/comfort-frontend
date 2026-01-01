@@ -89,6 +89,7 @@ const Doctors = ({ language: propLanguage = "uk" }) => {
           return {
             ...doctor,
             _embedded: {
+              ...doctor._embedded,
               featured: embeddedMedia || null,
               featuredMediaId: doctor.featured_media || null
             },

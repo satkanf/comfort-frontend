@@ -123,7 +123,7 @@ const Contacts = () => {
     <div className="min-h-screen flex flex-col">
       <Header postId="" />
       <main className="flex-1">
-        <section className="py-20 bg-gradient-to-b from-medical-gray-light/30 to-background">
+        <section className="pt-20 bg-gradient-to-b from-medical-gray-light/30 to-background">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center mb-12">
               <h1 className="text-5xl font-bold text-foreground mb-4">
@@ -136,7 +136,7 @@ const Contacts = () => {
           </div>
         </section>
 
-        <section className="py-12 bg-background">
+        <section className=" bg-background">
           <div className="container mx-auto px-4">
             <div className="max-w-2xl mx-auto">
               <div className="bg-card p-8 rounded-lg shadow-sm">

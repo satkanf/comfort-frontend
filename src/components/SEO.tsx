@@ -15,7 +15,7 @@ const SEO = ({
   title,
   description,
   keywords,
-  ogImage = "https://lovable.dev/opengraph-image-p98pqg.png",
+  ogImage = "/images/comfort-clinic-logo.png",
   canonical,
   type = "website",
   structuredData,
