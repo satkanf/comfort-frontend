@@ -4,12 +4,19 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Clock, Phone } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getBaseUrl } from '@/utils/baseUrl';
-import { fetchImageUrls, fetchPriceData } from '@/utils/api';
+import { fetchImageUrls, fetchPriceData, fetchDoctorData } from '@/utils/api';
+import DoctorCard from '@/components/DoctorCard';
 import BookingDialog from '@/components/BookingDialog';
 import SEO from "@/components/SEO.tsx";
 
@@ -43,7 +50,7 @@ interface ServiceData {
       service_price_add?: string;
 
       // Врачи для услуги
-      service_doctors_add?: string;
+      service_doctors_add?: number[] | string;
 
       // Простой текст
       service_text_add?: string;
@@ -68,6 +75,8 @@ const ServicesDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const [imageUrls, setImageUrls] = useState<{[key: number]: string}>({});
   const [priceData, setPriceData] = useState<{[key: number]: any}>({});
+  const [doctorData, setDoctorData] = useState<{[key: number]: any}>({});
+  const [doctorImageUrls, setDoctorImageUrls] = useState<{[key: number]: string}>({});
 
   useEffect(() => {
     const fetchService = async () => {
@@ -221,6 +230,25 @@ const ServicesDetail = () => {
           }
         });
 
+        // Собираем ID врачей для загрузки
+        const doctorIds: number[] = [];
+        serviceContentBlocks.forEach((block) => {
+          if (block.acf_fc_layout === 'service_doctors' && block.service_doctors_add) {
+            // service_doctors_add может быть числом, массивом чисел или строкой
+            if (typeof block.service_doctors_add === 'number') {
+              console.log('Found service_doctor ID:', block.service_doctors_add);
+              doctorIds.push(block.service_doctors_add);
+            } else if (Array.isArray(block.service_doctors_add)) {
+              console.log('Found service_doctor IDs array:', block.service_doctors_add);
+              block.service_doctors_add.forEach((doctorId: number) => {
+                if (typeof doctorId === 'number') {
+                  doctorIds.push(doctorId);
+                }
+              });
+            }
+          }
+        });
+
         console.log('Total image IDs found:', imageIds.length);
 
         if (imageIds.length > 0) {
@@ -309,6 +337,90 @@ const ServicesDetail = () => {
       loadPrices();
     }
   }, [service]);
+
+  // Загружаем данные врачей
+  useEffect(() => {
+    const loadDoctors = async () => {
+      console.log('Loading doctors for service:', service?.title?.rendered);
+
+      if (serviceContentBlocks && Array.isArray(serviceContentBlocks)) {
+        const doctorIds: number[] = [];
+
+        serviceContentBlocks.forEach((block) => {
+          if (block.acf_fc_layout === 'service_doctors' && block.service_doctors_add) {
+            // service_doctors_add может быть числом, массивом чисел или строкой
+            if (typeof block.service_doctors_add === 'number') {
+              console.log('Found service_doctor ID:', block.service_doctors_add);
+              doctorIds.push(block.service_doctors_add);
+            } else if (Array.isArray(block.service_doctors_add)) {
+              console.log('Found service_doctor IDs array:', block.service_doctors_add);
+              block.service_doctors_add.forEach((doctorId: number) => {
+                if (typeof doctorId === 'number') {
+                  doctorIds.push(doctorId);
+                }
+              });
+            }
+          }
+        });
+
+        console.log('Total doctor IDs found:', doctorIds.length);
+
+        if (doctorIds.length > 0) {
+          try {
+            const doctorDataArray = await fetchDoctorData(doctorIds, language);
+            console.log('Loaded doctor data:', doctorDataArray);
+
+            // Обрабатываем данные врачей как на странице Doctors
+            const processedDoctors = doctorDataArray.map((doctor: any) => {
+              if (!doctor) return null;
+
+              // Обрабатываем embedded медиа данные
+              const embeddedMedia = doctor._embedded?.["wp:featuredmedia"]?.[0];
+              const categoryNames = doctor._embedded?.["wp:term"]?.[0]?.map((cat: any) => cat.name) || [];
+
+              return {
+                ...doctor,
+                _embedded: {
+                  ...doctor._embedded,
+                  featured: embeddedMedia || null,
+                  featuredMediaId: doctor.featured_media || null
+                },
+                category_names: categoryNames,
+              };
+            }).filter(Boolean);
+
+            // Создаем объект, где ключ - ID врача, значение - обработанные данные врача
+            const doctorDataMap: {[key: number]: any} = {};
+            doctorIds.forEach((id, index) => {
+              if (processedDoctors[index]) {
+                doctorDataMap[id] = processedDoctors[index];
+              }
+            });
+
+            setDoctorData(doctorDataMap);
+
+            console.log('Doctor data processed, images should be in _embedded:', doctorDataArray.map(d => ({
+              id: d?.id,
+              title: d?.title?.rendered,
+              has_embedded_featured: !!d?._embedded?.featured,
+              featured_source_url: d?._embedded?.featured?.source_url
+            })));
+
+          } catch (err) {
+            console.error('Error loading doctor data:', err);
+          }
+        } else {
+          console.log('No doctor IDs found');
+        }
+      } else {
+        console.log('No service content blocks found');
+      }
+    };
+
+    if (service) {
+      loadDoctors();
+    }
+  }, [service, language]);
 
   // Если есть блоки контента, извлекаем данные из каждого блока
   let serviceTextBlocks: Array<{layout: string, text?: string, imageId?: number, imageText?: string}> = [];
@@ -701,6 +813,102 @@ const ServicesDetail = () => {
 
                 // Блок: Врачи для услуги
                 else if (block.acf_fc_layout === 'service_doctors' && block.service_doctors_add) {
+                  // Получаем всех врачей для отображения
+                  const doctorItems: any[] = [];
+                  if (typeof block.service_doctors_add === 'number') {
+                    const doctorItem = doctorData[block.service_doctors_add];
+                    if (doctorItem) doctorItems.push(doctorItem);
+                  } else if (Array.isArray(block.service_doctors_add)) {
+                    block.service_doctors_add.forEach((doctorId: number) => {
+                      const doctorItem = doctorData[doctorId];
+                      if (doctorItem) doctorItems.push(doctorItem);
+                    });
+                  }
+
+                  // Если есть данные о врачах, показываем их карточки
+                  if (doctorItems.length > 0) {
+                    const renderDoctors = () => {
+                      if (doctorItems.length > 3) {
+                        // Слайдер для большого количества врачей
+                        return (
+                          <div className="relative">
+                            <Swiper
+                              modules={[Navigation, Pagination, Autoplay]}
+                              spaceBetween={20}
+                              slidesPerView={1}
+                              breakpoints={{
+                                640: { slidesPerView: 2 },
+                                1024: { slidesPerView: 3 },
+                              }}
+                              navigation={{
+                                nextEl: '.doctors-swiper-next',
+                                prevEl: '.doctors-swiper-prev',
+                              }}
+                              pagination={{
+                                clickable: true,
+                                el: '.doctors-pagination',
+                              }}
+                              autoplay={{
+                                delay: 3000,
+                                disableOnInteraction: false,
+                                pauseOnMouseEnter: true,
+                              }}
+                              loop={doctorItems.length > 3}
+                              className="doctors-swiper"
+                            >
+                              {doctorItems.map((doctor) => (
+                                <SwiperSlide key={doctor.id}>
+                                  <DoctorCard
+                                    doctor={doctor}
+                                    language={language}
+                                  />
+                                </SwiperSlide>
+                              ))}
+                            </Swiper>
+
+                            {/* Навигационные кнопки */}
+                            <button className="doctors-swiper-prev absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-md transition-all duration-200">
+                              <ChevronLeft className="h-5 w-5 text-primary" />
+                            </button>
+                            <button className="doctors-swiper-next absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-md transition-all duration-200">
+                              <ChevronRight className="h-5 w-5 text-primary" />
+                            </button>
+
+                            {/* Пагинация */}
+                            <div className="doctors-pagination flex justify-center mt-6 space-x-2"></div>
+                          </div>
+                        );
+                      } else {
+                        // Сетка для небольшого количества врачей
+                        return (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {doctorItems.map((doctor) => (
+                              <DoctorCard
+                                key={doctor.id}
+                                doctor={doctor}
+                                language={language}
+                              />
+                            ))}
+                          </div>
+                        );
+                      }
+                    };
+
+                    return (
+                      <Card key={index} className="mb-8">
+                        <CardHeader>
+                          <CardTitle className="text-2xl text-primary">
+                            {language === 'ru' ? 'Наши специалисты' : 'Наші фахівці'}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-8">
+                          {renderDoctors()}
+                        </CardContent>
+                      </Card>
+                    );
+                  }
+
+                  // Если данных о врачах нет, показываем сообщение о загрузке
                   return (
                     <Card key={index} className="mb-8">
                       <CardHeader>
@@ -709,7 +917,16 @@ const ServicesDetail = () => {
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="p-8">
-                        <div dangerouslySetInnerHTML={{ __html: block.service_doctors_add }} />
+                        <div className="text-center py-8">
+                          <div className="animate-pulse">
+                            <div className="h-6 bg-gray-300 rounded w-1/3 mx-auto mb-4"></div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                              {[1, 2, 3].map(i => (
+                                <div key={i} className="h-64 bg-gray-200 rounded"></div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
                   );
@@ -776,5 +993,36 @@ const ServicesDetail = () => {
     </div>
   );
 };
+
+// Стили для слайдера врачей
+const styles = `
+  .doctors-swiper .swiper-slide {
+    height: auto;
+  }
+
+  .doctors-swiper-prev,
+  .doctors-swiper-next {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .doctors-swiper-prev,
+    .doctors-swiper-next {
+      display: flex;
+    }
+  }
+
+  .doctors-pagination .swiper-pagination-bullet {
+    width: 12px;
+    height: 12px;
+    background: #e5e7eb;
+    opacity: 0.5;
+  }
+
+  .doctors-pagination .swiper-pagination-bullet-active {
+    background: hsl(var(--primary));
+    opacity: 1;
+  }
+`;
 
 export default ServicesDetail;

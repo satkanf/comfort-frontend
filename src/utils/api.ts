@@ -71,6 +71,40 @@ export const fetchPriceData = async (priceIds: number[], language: string = 'uk'
     }
 };
 
+// Функция для получения данных врачей по ID
+export const fetchDoctorData = async (doctorIds: number[], language: string = 'uk'): Promise<any[]> => {
+    try {
+        const baseUrl = 'https://comfort.satkan.site';
+        const doctorPromises = doctorIds.map(async (id) => {
+            try {
+                // Получаем полные данные врача (как на странице Doctors)
+                const doctorResponse = await fetch(`${baseUrl}/wp-json/wp/v2/doctors/${id}?_embed=1&acf_format=standard&lang=${language}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    }
+                });
+                if (!doctorResponse.ok) {
+                    console.error(`Failed to fetch doctor ${id}:`, doctorResponse.status);
+                    return null;
+                }
+                const doctorData = await doctorResponse.json();
+                return doctorData;
+            } catch (err) {
+                console.error(`Error loading doctor ${id}:`, err);
+                return null;
+            }
+        });
+
+        const doctorData = await Promise.all(doctorPromises);
+        return doctorData.filter(data => data !== null);
+    } catch (err) {
+        console.error('Error loading doctor data:', err);
+        return [];
+    }
+};
+
 // Устаревшая функция - оставлена для совместимости
 export const fetchPrices = async (priceIds: number[]): Promise<string[]> => {
     const priceData = await fetchPriceData(priceIds);
