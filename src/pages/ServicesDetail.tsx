@@ -3,12 +3,13 @@ import {useParams, useNavigate, Link} from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Clock, Phone } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getBaseUrl } from '@/utils/baseUrl';
-import { fetchImageUrls } from '@/utils/api';
+import { fetchImageUrls, fetchPriceData } from '@/utils/api';
 import BookingDialog from '@/components/BookingDialog';
 import SEO from "@/components/SEO.tsx";
 
@@ -66,6 +67,7 @@ const ServicesDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageUrls, setImageUrls] = useState<{[key: number]: string}>({});
+  const [priceData, setPriceData] = useState<{[key: number]: any}>({});
 
   useEffect(() => {
     const fetchService = async () => {
@@ -200,6 +202,25 @@ const ServicesDetail = () => {
           }
         });
 
+        // Собираем ID цен для загрузки
+        const priceIds: number[] = [];
+        serviceContentBlocks.forEach((block) => {
+          if (block.acf_fc_layout === 'service_price' && block.service_price_add) {
+            // service_price_add может быть числом или массивом чисел
+            if (typeof block.service_price_add === 'number') {
+              console.log('Found service_price ID:', block.service_price_add);
+              priceIds.push(block.service_price_add);
+            } else if (Array.isArray(block.service_price_add)) {
+              console.log('Found service_price IDs array:', block.service_price_add);
+              block.service_price_add.forEach((priceId: number) => {
+                if (typeof priceId === 'number') {
+                  priceIds.push(priceId);
+                }
+              });
+            }
+          }
+        });
+
         console.log('Total image IDs found:', imageIds.length);
 
         if (imageIds.length > 0) {
@@ -229,6 +250,63 @@ const ServicesDetail = () => {
 
     if (service) {
       loadImageUrls();
+    }
+  }, [service]);
+
+  // Загружаем цены
+  useEffect(() => {
+    const loadPrices = async () => {
+      console.log('Loading prices for service:', service?.title?.rendered);
+
+      if (serviceContentBlocks && Array.isArray(serviceContentBlocks)) {
+        const priceIds: number[] = [];
+
+        serviceContentBlocks.forEach((block) => {
+          if (block.acf_fc_layout === 'service_price' && block.service_price_add) {
+            // service_price_add может быть числом или массивом чисел
+            if (typeof block.service_price_add === 'number') {
+              console.log('Found service_price ID:', block.service_price_add);
+              priceIds.push(block.service_price_add);
+            } else if (Array.isArray(block.service_price_add)) {
+              console.log('Found service_price IDs array:', block.service_price_add);
+              block.service_price_add.forEach((priceId: number) => {
+                if (typeof priceId === 'number') {
+                  priceIds.push(priceId);
+                }
+              });
+            }
+          }
+        });
+
+        console.log('Total price IDs found:', priceIds.length);
+
+        if (priceIds.length > 0) {
+          try {
+            const priceDataArray = await fetchPriceData(priceIds, language);
+            console.log('Loaded price data:', priceDataArray);
+
+            // Создаем объект, где ключ - ID цены, значение - данные цены
+            const priceDataMap: {[key: number]: any} = {};
+            priceIds.forEach((id, index) => {
+              if (priceDataArray[index]) {
+                priceDataMap[id] = priceDataArray[index];
+              }
+            });
+
+            setPriceData(priceDataMap);
+          } catch (err) {
+            console.error('Error loading price data:', err);
+          }
+        } else {
+          console.log('No price IDs found');
+        }
+      } else {
+        console.log('No service content blocks found');
+      }
+    };
+
+    if (service) {
+      loadPrices();
     }
   }, [service]);
 
@@ -499,17 +577,123 @@ const ServicesDetail = () => {
 
                 // Блок: Цена услуги
                 else if (block.acf_fc_layout === 'service_price' && block.service_price_add) {
+                  // Получаем все данные цен для отображения
+                  const priceItems: any[] = [];
+                  if (typeof block.service_price_add === 'number') {
+                    const priceItem = priceData[block.service_price_add];
+                    if (priceItem) priceItems.push(priceItem);
+                  } else if (Array.isArray(block.service_price_add)) {
+                    block.service_price_add.forEach((priceId: number) => {
+                      const priceItem = priceData[priceId];
+                      if (priceItem) priceItems.push(priceItem);
+                    });
+                  }
+
+                  // Если нет данных о ценах, показываем сообщение о загрузке
+                  if (priceItems.length === 0) {
+                    return (
+                      <Card key={index} className="mb-8">
+                        <CardHeader>
+                          <CardTitle className="text-2xl text-primary">
+                            {language === 'ru' ? 'Стоимость услуги' : 'Вартість послуги'}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-8">
+                          <div className="text-center py-8">
+                            <div className="animate-pulse">
+                              <div className="h-6 bg-gray-300 rounded w-1/3 mx-auto mb-4"></div>
+                              <div className="space-y-3">
+                                {[1, 2, 3].map(i => (
+                                  <div key={i} className="h-4 bg-gray-200 rounded"></div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  }
+
+                  // Группируем цены по категориям для отображения в табах
+                  const priceCategories: Array<{
+                    id: string;
+                    category: string;
+                    services: Array<{
+                      name: string;
+                      price?: string;
+                    }>;
+                  }> = [];
+
+                  priceItems.forEach((priceItem) => {
+                    if (priceItem.acf?.price_list && Array.isArray(priceItem.acf.price_list)) {
+                      const categoryName = priceItem.title?.rendered || 'Цены';
+                      const categoryId = categoryName.toLowerCase()
+                        .replace(/\s+/g, '-')
+                        .replace(/[^a-zа-яё0-9-]/gi, '');
+
+                      const services = priceItem.acf.price_list
+                        .filter((priceItem: any) => priceItem.price_label)
+                        .map((priceItem: any) => ({
+                          name: priceItem.price_label,
+                          price: priceItem.price_value || ""
+                        }));
+
+                      if (services.length > 0) {
+                        priceCategories.push({
+                          id: categoryId,
+                          category: categoryName,
+                          services
+                        });
+                      }
+                    }
+                  });
+
                   return (
-                    <Card key={index} className="mb-8">
+                    <Card key={index} className="mb-4">
                       <CardHeader>
-                        <CardTitle className="text-2xl text-primary">
+                        <CardTitle className="text-3xl text-primary text-center">
                           {language === 'ru' ? 'Стоимость услуги' : 'Вартість послуги'}
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="p-8">
-                        <div className="text-3xl font-bold text-primary mb-4">
-                          {block.service_price_add}
-                        </div>
+                      <CardContent className="p-8 pt-0">
+                        {priceCategories.length > 0 ? (
+                          <Tabs defaultValue={priceCategories[0]?.id} className="w-full">
+
+                            {priceCategories.map((category) => (
+                              <TabsContent key={category.id} value={category.id} className="mt-4">
+                                <Card className="shadow-sm border">
+                                  <CardContent className="p-6">
+                                    <div className="space-y-3">
+                                      {category.services.map((service, serviceIndex) => (
+                                        <div
+                                          key={serviceIndex}
+                                          className="flex justify-between items-center py-3 border-b last:border-0 hover:bg-muted/50 transition-colors px-4 rounded"
+                                        >
+                                          <span
+                                            className="text-foreground font-medium flex-1"
+                                            dangerouslySetInnerHTML={{ __html: service.name }}
+                                          />
+                                          <div
+                                            className="flex items-center gap-3 font-bold text-primary text-lg whitespace-nowrap ml-4"
+                                            dangerouslySetInnerHTML={{
+                                              __html: service.price || ""
+                                            }}
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </TabsContent>
+                            ))}
+                          </Tabs>
+                        ) : (
+                          <div className="text-center py-8">
+                            <p className="text-muted-foreground">
+                              {language === 'ru' ? 'Цены загружаются...' : 'Ціни завантажуються...'}
+                            </p>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   );

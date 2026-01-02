@@ -37,6 +37,46 @@ export const fetchJSONP = (url: string): Promise<any> => {
     });
 };
 
+// Функция для получения данных цен по ID
+export const fetchPriceData = async (priceIds: number[], language: string = 'uk'): Promise<any[]> => {
+    try {
+        const baseUrl = 'https://comfort.satkan.site';
+        const pricePromises = priceIds.map(async (id) => {
+            try {
+                // Получаем полные данные цены
+                const priceResponse = await fetch(`${baseUrl}/wp-json/wp/v2/price/${id}?_embed&lang=${language}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    }
+                });
+                if (!priceResponse.ok) {
+                    console.error(`Failed to fetch price ${id}:`, priceResponse.status);
+                    return null;
+                }
+                const priceData = await priceResponse.json();
+                return priceData;
+            } catch (err) {
+                console.error(`Error loading price ${id}:`, err);
+                return null;
+            }
+        });
+
+        const priceData = await Promise.all(pricePromises);
+        return priceData.filter(data => data !== null);
+    } catch (err) {
+        console.error('Error loading price data:', err);
+        return [];
+    }
+};
+
+// Устаревшая функция - оставлена для совместимости
+export const fetchPrices = async (priceIds: number[]): Promise<string[]> => {
+    const priceData = await fetchPriceData(priceIds);
+    return priceData.map(data => data?.acf?.price || data?.acf?.price_value || data?.title?.rendered || 'Цена не указана');
+};
+
 // Функция для получения URL изображений по ID
 export const fetchImageUrls = async (imageIds: (number | string)[]): Promise<string[]> => {
     try {
