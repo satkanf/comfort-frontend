@@ -24,6 +24,7 @@ interface TaxonomyTerm {
 interface Service {
   id: number;
   title: { rendered: string };
+  slug: string;
   services_caservices_catt?: number[];
   _embedded?: {
     'wp:term'?: Array<Array<TaxonomyTerm>>;
@@ -63,7 +64,7 @@ const ServiceCard = ({ service }: { service: Service }) => {
   return (
     <Card
       className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-border/50 cursor-pointer"
-      onClick={() => navigate(`/services/${service.id}`)}
+      onClick={() => navigate(`/services/${service.slug}`)}
     >
       <CardHeader className="items-center">
         <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
@@ -98,12 +99,14 @@ const ServicesPage = () => {
   const [error, setError] = useState(null);
 
   const getTranslations = () => {
+    const lang = language || currentLanguage || 'uk';
+
     return {
-      title: translations.pages.services.title[language as "uk" | "ru"],
-      subtitle: translations.pages.services.subtitle[language as "uk" | "ru"],
-      loading: translations.common.loading[language as "uk" | "ru"],
-      readyToBook: translations.pages.services.readyToBook[language as "uk" | "ru"],
-      supportText: translations.pages.services.supportText[language as "uk" | "ru"]
+      title: translations.pages.services.title[lang as "uk" | "ru"],
+      subtitle: translations.pages.services.subtitle[lang as "uk" | "ru"],
+      loading: translations.common.loading[lang as "uk" | "ru"],
+      readyToBook: translations.pages.services.readyToBook[lang as "uk" | "ru"],
+      supportText: translations.pages.services.supportText[lang as "uk" | "ru"]
     };
   };
 
@@ -159,7 +162,7 @@ const ServicesPage = () => {
     fetchServices();
   }, [currentLanguage]);
 
-  const translations = getTranslations();
+  const pageTranslations = getTranslations();
 
   if (loading) {
     return (
@@ -229,11 +232,11 @@ const ServicesPage = () => {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1">
-          <section className="py-20 bg-gradient-to-b from-medical-gray-light/30 to-background">
+          <section className="pt-20 bg-gradient-to-b from-medical-gray-light/30 to-background">
             <div className="container mx-auto px-4">
               <div className="max-w-3xl mx-auto text-center">
                 <h1 className="text-5xl font-bold text-foreground mb-4">
-                  {translations.title}
+                  {pageTranslations.title}
                 </h1>
                 <p className="text-muted-foreground text-lg">
                   Послуги тимчасово недоступні
@@ -253,20 +256,20 @@ const ServicesPage = () => {
        <div className="min-h-screen flex flex-col">
       <Header postId="" />
       <main className="flex-1">
-        <section className="py-20 bg-gradient-to-b from-medical-gray-light/30 to-background">
+        <section className="pt-20 bg-gradient-to-b from-medical-gray-light/30 to-background">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center mb-12">
               <h1 className="text-5xl font-bold text-foreground mb-4">
-                {translations.title}
+                {pageTranslations.title}
               </h1>
               <p className="text-muted-foreground text-lg">
-                {translations.subtitle}
+                {pageTranslations.subtitle}
               </p>
             </div>
           </div>
         </section>
 
-        <section className="py-20">
+        <section className="pb-20">
           <div className="container">
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {services.map((service) => (
@@ -282,10 +285,10 @@ const ServicesPage = () => {
         <section className="py-20 bg-card">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl font-bold mb-6">
-              {translations.readyToBook}
+              {pageTranslations.readyToBook}
             </h2>
             <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-              {translations.supportText}
+              {pageTranslations.supportText}
             </p>
             <BookingDialog />
           </div>

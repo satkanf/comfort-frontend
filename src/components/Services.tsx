@@ -20,6 +20,7 @@ interface TaxonomyTerm {
 interface Service {
   id: number;
   title: { rendered: string };
+  slug: string;
   _embedded?: {
     'wp:term'?: Array<Array<TaxonomyTerm>>;
   };
@@ -70,7 +71,7 @@ const ServiceCard = ({ service, language }: { service: Service; language: string
   return (
       <Card
           className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-border/50 cursor-pointer"
-          onClick={() => navigate(`/services/${service.id}`)}
+          onClick={() => navigate(`/services/${service.slug}`)}
       >
         <CardHeader className="items-center">
           <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">

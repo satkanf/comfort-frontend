@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import MenuTree from "./MenuTree";
 import { useTranslations } from "@/hooks/useTranslations";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useNavigate } from 'react-router-dom';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -18,6 +19,7 @@ import { getBaseUrl } from "@/utils/baseUrl";
 const ServicesMenu = () => {
   const { language } = useLanguage();
   const [menu, setMenu] = useState([]);
+  const navigate = useNavigate();
 
   const getTranslations = () => {
     const defaultTranslations = {
@@ -91,7 +93,11 @@ const ServicesMenu = () => {
           {menu
             .filter(item => item.classes?.includes("dropdown"))
             .map((item, index) => (
-              <NavigationMenuTrigger key={item.ID || `dropdown-${index}`} className="text-hover">
+              <NavigationMenuTrigger key={item.ID || `dropdown-${index}`} className="text-hover"
+                                     onClick={(e) => {
+                                       e.stopPropagation(); // чтобы не сработал клик карточки
+                                       navigate(`/services`); // ← slug
+                                     }}>
                 {item.title}
               </NavigationMenuTrigger>
 
