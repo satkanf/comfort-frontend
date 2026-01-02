@@ -178,20 +178,25 @@ const ServicesDetail = () => {
         serviceContentBlocks.forEach((block, index) => {
           console.log(`Processing block ${index}:`, block.acf_fc_layout);
 
-          // Собираем все возможные поля изображений из разных типов блоков
-          if (block.acf_fc_layout === 'service_tx_im' && block.service_tx_image) {
-            console.log('Found service_tx_image:', block.service_tx_image);
+          // Собираем только числовые ID изображений (не URL)
+          if (block.acf_fc_layout === 'service_tx_im' && block.service_tx_image && typeof block.service_tx_image === 'number') {
+            console.log('Found service_tx_image ID:', block.service_tx_image);
             imageIds.push(block.service_tx_image);
           }
 
-          if (block.acf_fc_layout === 'service_im_tx' && block.service_image_tx) {
-            console.log('Found service_image_tx:', block.service_image_tx);
+          if (block.acf_fc_layout === 'service_im_tx' && block.service_image_tx && typeof block.service_image_tx === 'number') {
+            console.log('Found service_image_tx ID:', block.service_image_tx);
             imageIds.push(block.service_image_tx);
           }
 
-          if (block.acf_fc_layout === 'service_banner' && block.service_banner_image) {
-            console.log('Found service_banner_image:', block.service_banner_image);
+          if (block.acf_fc_layout === 'service_banner' && block.service_banner_image && typeof block.service_banner_image === 'number') {
+            console.log('Found service_banner_image ID:', block.service_banner_image);
             imageIds.push(block.service_banner_image);
+          }
+
+          if (block.acf_fc_layout === 'service_image_top' && block.service_img_top && typeof block.service_img_top === 'number') {
+            console.log('Found service_img_top ID:', block.service_img_top);
+            imageIds.push(block.service_img_top);
           }
         });
 
@@ -201,7 +206,16 @@ const ServicesDetail = () => {
           try {
             const urls = await fetchImageUrls(imageIds);
             console.log('Loaded image URLs:', urls);
-            setImageUrls(urls);
+
+            // Создаем объект, где ключ - ID изображения, значение - URL
+            const imageUrlsMap: {[key: number]: string} = {};
+            imageIds.forEach((id, index) => {
+              if (typeof id === 'number' && urls[index]) {
+                imageUrlsMap[id] = urls[index];
+              }
+            });
+
+            setImageUrls(imageUrlsMap);
           } catch (err) {
             console.error('Error loading image URLs:', err);
           }
@@ -381,11 +395,14 @@ const ServicesDetail = () => {
                           {/* Изображение */}
                           {block.service_tx_image && (
                             <img
-                              src={imageUrls[block.service_tx_image] || '/placeholder-image.svg'}
+                              src={typeof block.service_tx_image === 'string' && block.service_tx_image.startsWith('http')
+                                ? block.service_tx_image  // Прямой URL
+                                : imageUrls[block.service_tx_image] || '/placeholder-image.svg'  // URL из API
+                              }
                               alt={title}
                               className="w-full h-[400px] object-cover rounded-lg shadow-lg"
                               onError={(e) => {
-                                console.log('Image failed to load:', imageUrls[block.service_tx_image]);
+                                console.log('Image failed to load:', block.service_tx_image);
                                 e.currentTarget.src = '/placeholder-image.svg';
                               }}
                             />
@@ -407,7 +424,20 @@ const ServicesDetail = () => {
                     <Card key={index} className="mb-8">
                       <CardContent className="p-8">
                         <div className="grid md:grid-cols-2 gap-8">
-                          <img src={imageUrls[block.service_image_tx] || '/placeholder-image.svg'} alt={title} className="w-full h-[400px] object-cover rounded-lg shadow-lg" />
+                          {block.service_image_tx && (
+                            <img
+                              src={typeof block.service_image_tx === 'string' && block.service_image_tx.startsWith('http')
+                                ? block.service_image_tx  // Прямой URL
+                                : imageUrls[block.service_image_tx] || '/placeholder-image.svg'  // URL из API
+                              }
+                              alt={title}
+                              className="w-full h-[400px] object-cover rounded-lg shadow-lg"
+                              onError={(e) => {
+                                console.log('Image failed to load:', block.service_image_tx);
+                                e.currentTarget.src = '/placeholder-image.svg';
+                              }}
+                            />
+                          )}
                           {block.service_im_text && (
                               <div dangerouslySetInnerHTML={{ __html: block.service_im_text }} />
                           )}
@@ -442,7 +472,20 @@ const ServicesDetail = () => {
 
                         <Card key={index} className="mb-8">
                           <CardContent className="p-8">
-                            <img src={imageUrls[block.service_img_top] || '/placeholder-image.svg'} alt={title} className="w-full h-[500px] object-cover rounded-lg shadow-lg" />
+                            {block.service_img_top && (
+                              <img
+                                src={typeof block.service_img_top === 'string' && block.service_img_top.startsWith('http')
+                                  ? block.service_img_top  // Прямой URL
+                                  : imageUrls[block.service_img_top] || '/placeholder-image.svg'  // URL из API
+                                }
+                                alt={title}
+                                className="w-full h-[500px] object-cover rounded-lg shadow-lg"
+                                onError={(e) => {
+                                  console.log('Image failed to load:', block.service_img_top);
+                                  e.currentTarget.src = '/placeholder-image.svg';
+                                }}
+                              />
+                            )}
                             {block.service_text_bt && (
                                 <div className="text-lg text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{__html: block.service_text_bt}}/>
                             )}
@@ -495,11 +538,14 @@ const ServicesDetail = () => {
                       <CardContent className="p-0">
                         {block.service_banner_image && (
                           <img
-                            src={imageUrls[block.service_banner_image] || '/placeholder-image.svg'}
+                            src={typeof block.service_banner_image === 'string' && block.service_banner_image.startsWith('http')
+                              ? block.service_banner_image  // Прямой URL
+                              : imageUrls[block.service_banner_image] || '/placeholder-image.svg'  // URL из API
+                            }
                             alt={title}
                             className="w-full h-96 object-cover rounded-lg"
                             onError={(e) => {
-                              console.log('Banner image failed to load:', imageUrls[block.service_banner_image]);
+                              console.log('Banner image failed to load:', block.service_banner_image);
                               e.currentTarget.src = '/placeholder-image.svg';
                             }}
                           />
