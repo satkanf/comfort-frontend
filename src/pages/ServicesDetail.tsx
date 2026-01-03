@@ -548,16 +548,12 @@ const ServicesDetail = () => {
           <div className="container">
             <div className="max-w-4xl mx-auto text-center">
               <h1 className="text-4xl md:text-5xl font-bold mb-4">{title}</h1>
-              {/*{description && (*/}
-              {/*  <div className="text-xl text-muted-foreground mb-6" dangerouslySetInnerHTML={{ __html: description }} />*/}
-              {/*)}*/}
-              {/*<BookingDialog />*/}
             </div>
           </div>
         </section>
 
         {/* Контент услуги из ACF блоков */}
-        <section className="py-12 bg-background">
+        <section className="py-12 bg-background service-style">
           <div className="container">
             <div className="max-w-6xl mx-auto">
               {serviceContentBlocks && serviceContentBlocks.map((block, index) => {
@@ -580,7 +576,7 @@ const ServicesDetail = () => {
                         <div className="grid md:grid-cols-2 gap-8">
                           {/* Текст */}
                           {block.service_text_im && (
-                              <div dangerouslySetInnerHTML={{ __html: block.service_text_im }} />
+                              <div className="text-lg text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: block.service_text_im }} />
                           )}
                           {/* Изображение */}
                           {block.service_tx_image && (
@@ -598,7 +594,7 @@ const ServicesDetail = () => {
                             />
                           )}
                           {block.service_tx_im_mr && (
-                              <div className="col-span-2" dangerouslySetInnerHTML={{ __html: block.service_tx_im_mr }} />
+                              <div className="col-span-2  text-lg text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: block.service_tx_im_mr }} />
                           )}
 
 
@@ -629,7 +625,7 @@ const ServicesDetail = () => {
                             />
                           )}
                           {block.service_im_text && (
-                              <div dangerouslySetInnerHTML={{ __html: block.service_im_text }} />
+                              <div className="text-lg text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: block.service_im_text }} />
                           )}
                           {block.service_im_tx_mk && (
                             <div className="col-span-2" dangerouslySetInnerHTML={{ __html: block.service_im_tx_mk }} />
@@ -761,7 +757,7 @@ const ServicesDetail = () => {
                   });
 
                   return (
-                    <Card key={index} className="mb-4">
+                    <Card key={index} className="mt-24">
                       <CardHeader>
                         <CardTitle className="text-3xl text-primary text-center">
                           {language === 'ru' ? 'Стоимость услуги' : 'Вартість послуги'}
@@ -895,9 +891,9 @@ const ServicesDetail = () => {
                     };
 
                     return (
-                      <Card key={index} className="mb-8">
+                      <Card key={index} className="mt-24">
                         <CardHeader>
-                          <CardTitle className="text-2xl text-primary">
+                          <CardTitle className="text-3xl text-primary text-center">
                             {language === 'ru' ? 'Наши специалисты' : 'Наші фахівці'}
                           </CardTitle>
                         </CardHeader>

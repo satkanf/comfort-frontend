@@ -188,4 +188,37 @@ footer .lucide{
   cursor: not-allowed;
   transform: none !important;
 }
+.service-style h1{
+  font-size: 2.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+.service-style h2{
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+.service-style h3{
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+.service-style h1:not(:first-child){
+  margin-top: 1rem;
+}
+.service-style h2:not(:first-child){
+  margin-top: 1rem;
+}
+.service-style h3:not(:first-child){
+  margin-top: 1rem;
+}
+.service-style ul,ol{
+  margin-left: 2rem;
+}
+.service-style ul li{
+  list-style-type: disc;
+}
+.service-style ol li{
+  list-style-type: decimal;
+}
 
