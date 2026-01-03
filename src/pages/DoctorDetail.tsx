@@ -16,6 +16,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import { getBaseUrl } from "@/utils/baseUrl";
+import CallbackDialog from "@/components/CallbackDialog.tsx";
 
 interface DoctorData {
     id: number;
@@ -555,14 +556,8 @@ const DoctorDetail = () => {
                             }
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Button size="lg">
-                                <Calendar className="mr-2 h-5 w-5" />
-                                {language === 'ru' ? 'Записаться на прием' : 'Записатися на прийом'}
-                            </Button>
-                            <Button size="lg" variant="outline">
-                                <Phone className="mr-2 h-5 w-5" />
-                                {language === 'ru' ? 'Позвонить' : 'Зателефонувати'}
-                            </Button>
+                            <BookingDialog />
+                            <CallbackDialog variant="outline" size="lg" />
                         </div>
                     </div>
                 </section>

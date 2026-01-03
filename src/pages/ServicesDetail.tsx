@@ -16,8 +16,10 @@ import { ArrowLeft, Clock, Phone } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getBaseUrl } from '@/utils/baseUrl';
 import { fetchImageUrls, fetchPriceData, fetchDoctorData } from '@/utils/api';
+import { getStaticTranslation } from '@/translations/static';
 import DoctorCard from '@/components/DoctorCard';
 import BookingDialog from '@/components/BookingDialog';
+import CallbackDialog from "@/components/CallbackDialog";
 import SEO from "@/components/SEO.tsx";
 
 interface ServiceData {
@@ -473,8 +475,8 @@ const ServicesDetail = () => {
   const fullDescription = serviceTextBlocks.length > 1 ? serviceTextBlocks.slice(1).map(block => block.text).join('\n') : '';
 
   // Заголовок для SEO и страницы
-  const title = serviceTitle || 'Услуга';
-  const pageDescription = description ? description.replace(/<[^>]*>/g, '').substring(0, 160) : 'Медицинская услуга клиники Comfort';
+  const title = serviceTitle || getStaticTranslation('services.defaultTitle', language as "uk" | "ru");
+  const pageDescription = description ? description.replace(/<[^>]*>/g, '').substring(0, 160) : getStaticTranslation('services.defaultDescription', language as "uk" | "ru");
 
   // Translations
   const serviceTranslations = service?.translations;
@@ -498,10 +500,10 @@ const ServicesDetail = () => {
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-3xl font-bold mb-4">
-              {language === 'ru' ? 'Услуга не найдена' : 'Послугу не знайдено'}
+              {getStaticTranslation('services.notFound', language as "uk" | "ru")}
             </h1>
             <Button onClick={() => navigate("/services")}>
-              {language === 'ru' ? 'Вернуться к услугам' : 'Повернутися до послуг'}
+              {getStaticTranslation('services.backToServices', language as "uk" | "ru")}
             </Button>
           </div>
         </main>
@@ -526,8 +528,8 @@ const ServicesDetail = () => {
             "name": "Comfort Clinic",
             "address": {
               "@type": "PostalAddress",
-              "streetAddress": language === 'ru' ? "ул. Западная 6" : "вул. Західна 6",
-              "addressLocality": language === 'ru' ? "Ирпень" : "Ірпінь",
+              "streetAddress": getStaticTranslation('contacts.streetAddress', language as "uk" | "ru"),
+              "addressLocality": getStaticTranslation('contacts.addressLocality', language as "uk" | "ru"),
               "addressCountry": "UA"
             }
           }
@@ -703,7 +705,7 @@ const ServicesDetail = () => {
                       <Card key={index} className="mb-8">
                         <CardHeader>
                           <CardTitle className="text-2xl text-primary">
-                            {language === 'ru' ? 'Стоимость услуги' : 'Вартість послуги'}
+                            {getStaticTranslation('services.costTitle', language as "uk" | "ru")}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="p-8">
@@ -734,7 +736,7 @@ const ServicesDetail = () => {
 
                   priceItems.forEach((priceItem) => {
                     if (priceItem.acf?.price_list && Array.isArray(priceItem.acf.price_list)) {
-                      const categoryName = priceItem.title?.rendered || 'Цены';
+                      const categoryName = priceItem.title?.rendered || getStaticTranslation('services.pricesTitle', language as "uk" | "ru");
                       const categoryId = categoryName.toLowerCase()
                         .replace(/\s+/g, '-')
                         .replace(/[^a-zа-яё0-9-]/gi, '');
@@ -798,7 +800,7 @@ const ServicesDetail = () => {
                         ) : (
                           <div className="text-center py-8">
                             <p className="text-muted-foreground">
-                              {language === 'ru' ? 'Цены загружаются...' : 'Ціни завантажуються...'}
+                              {getStaticTranslation('common.priceLoading', language as "uk" | "ru")}
                             </p>
                           </div>
                         )}
@@ -894,7 +896,7 @@ const ServicesDetail = () => {
                       <Card key={index} className="mt-24">
                         <CardHeader>
                           <CardTitle className="text-3xl text-primary text-center">
-                            {language === 'ru' ? 'Наши специалисты' : 'Наші фахівці'}
+                            {getStaticTranslation('doctors.ourDoctors', language as "uk" | "ru")}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="p-8">
@@ -963,7 +965,7 @@ const ServicesDetail = () => {
           <div className="container">
             <div className="max-w-2xl mx-auto text-center">
               <h2 className="text-3xl font-bold mb-4">
-                {language === "ru" ? "Готовы записаться на прием?" : "Готові записатися на прийом?"}
+                {language === "ru" ? "Готові записаться на прием?" : "Готові записатися на прийом?"}
               </h2>
               <p className="text-muted-foreground mb-8">
                 {language === "ru"
@@ -971,15 +973,8 @@ const ServicesDetail = () => {
                   : "Наша команда фахівців готова надати вам кваліфіковану допомогу"}
               </p>
               <div className="flex gap-4 justify-center flex-wrap">
-                <BookingDialog
-                  triggerText={language === "ru" ? "Записаться на консультацию" : "Записатися на консультацію"}
-                />
-                <Button size="lg" variant="outline" asChild>
-                  <a href="tel:+380954220032">
-                    <Phone className="mr-2 h-5 w-5" />
-                    {language === "ru" ? "Позвонить" : "Зателефонувати"}
-                  </a>
-                </Button>
+                <BookingDialog />
+                <CallbackDialog variant="outline" className="h-11 rounded-md px-8" />
               </div>
             </div>
           </div>

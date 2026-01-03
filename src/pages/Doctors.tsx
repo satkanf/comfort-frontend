@@ -10,6 +10,7 @@ import DoctorCard from '@/components/DoctorCard';
 import { useTranslations } from "@/hooks/useTranslations";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/translations";
+import { getStaticTranslation } from "@/translations/static";
 import { getBaseUrl } from "@/utils/baseUrl";
 
 interface DoctorData {
@@ -42,17 +43,15 @@ const Doctors = ({ language: propLanguage = "uk" }) => {
   const getTranslations = () => {
     return {
       pageTitle: translations.pages.doctors.allDoctors[language as "uk" | "ru"],
-      pageSubtitle: 'Команда висококваліфікованих фахівців з багаторічним досвідом та індивідуальним підходом до кожного пацієнта',
+      pageSubtitle: getStaticTranslation('doctors.subtitle', language as "uk" | "ru"),
       all: translations.common.all[language as "uk" | "ru"],
       searchPlaceholder: translations.pages.doctors.searchPlaceholder[language as "uk" | "ru"],
       filterBySpecialty: translations.pages.doctors.filterBySpecialty[language as "uk" | "ru"],
       experience: translations.pages.doctors.experience[language as "uk" | "ru"],
       bookAppointment: translations.pages.doctors.bookAppointment[language as "uk" | "ru"],
       noDoctors: translations.pages.doctors.noDoctors[language as "uk" | "ru"],
-      needConsultation: language === 'ru' ? 'Нужна консультация?' : 'Потрібна консультація?',
-      consultationText: language === 'ru'
-        ? 'Позвоните нам или заполните форму онлайн-записи, и мы подберем для вас лучшего специалиста'
-        : 'Зателефонуйте нам або заповніть форму онлайн-запису, і ми підберемо для вас найкращого спеціаліста'
+      needConsultation: getStaticTranslation('doctors.needConsultation', language as "uk" | "ru"),
+      consultationText: getStaticTranslation('doctors.consultationText', language as "uk" | "ru")
     };
   };
 

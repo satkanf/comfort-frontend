@@ -3,6 +3,7 @@ import ServicesMenu from "./ServicesMenu";
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getBaseUrl } from "@/utils/baseUrl";
+import { getStaticTranslation } from '@/translations/static';
 
 
 
@@ -14,7 +15,7 @@ export  function FooterMenuMain() {
     const fetchMenu = async () => {
       try {
         const baseUrl = getBaseUrl();
-        const menuSuffix = language === 'ru' ? '-ru' : '';
+        const menuSuffix = getStaticTranslation('menu.suffix', language as "uk" | "ru");
         const requestUrl = `${baseUrl}/wp-json/menus/v1/menus/footer-menu${menuSuffix}`;
 
         const response = await fetch(requestUrl, {
@@ -82,7 +83,7 @@ export  function FooterMenuSecondary() {
     const fetchMenu = async () => {
       try {
         const baseUrl = getBaseUrl();
-        const menuSuffix = language === 'ru' ? '-ru' : '';
+        const menuSuffix = getStaticTranslation('menu.suffix', language as "uk" | "ru");
         const requestUrl = `${baseUrl}/wp-json/menus/v1/menus/footer-menu-2${menuSuffix}`;
 
         const response = await fetch(requestUrl, {

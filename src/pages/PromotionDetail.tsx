@@ -9,6 +9,7 @@ import { Clock, Percent, ArrowLeft, CheckCircle, ImageIcon } from "lucide-react"
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getBaseUrl } from "@/utils/baseUrl";
 import BookingDialog from "@/components/BookingDialog";
+import { getStaticTranslation } from '@/translations/static';
 
 interface PromotionData {
   id: number;
@@ -177,10 +178,10 @@ const PromotionDetail = () => {
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-3xl font-bold mb-4">
-              {language === 'ru' ? 'Акция не найдена' : 'Акцію не знайдено'}
+              {getStaticTranslation('promotions.notFound', language as "uk" | "ru")}
             </h1>
             <Button onClick={() => navigate("/promotion")}>
-              {language === 'ru' ? 'Вернуться к акциям' : 'Повернутися до акцій'}
+              {getStaticTranslation('promotions.backToPromotions', language as "uk" | "ru")}
             </Button>
           </div>
         </main>
@@ -215,7 +216,7 @@ const PromotionDetail = () => {
                 className="mb-4 text-white hover:text-white hover:bg-white/20"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                {language === 'ru' ? 'Назад к акциям' : 'Назад до акцій'}
+                {getStaticTranslation('promotions.backToPromotionsAlt', language as "uk" | "ru")}
               </Button>
               <div className="flex items-start gap-4">
                 {promotion.acf?.promotion_price?.promotion_price_procent && (
@@ -260,7 +261,7 @@ const PromotionDetail = () => {
                       <>
                         <div>
                           <p className="text-sm text-muted-foreground mb-2">
-                            {language === 'ru' ? 'Старая цена' : 'Стара ціна'}
+                            {getStaticTranslation('common.oldPrice', language as "uk" | "ru")}
                           </p>
                           <p className="text-2xl line-through text-muted-foreground">
                             {promotion.acf.promotion_price.promotion_price_old}
@@ -269,7 +270,7 @@ const PromotionDetail = () => {
 
                         <div>
                           <p className="text-sm text-muted-foreground mb-2">
-                            {language === 'ru' ? 'Цена по акции' : 'Ціна за акцією'}
+                            {getStaticTranslation('common.discountPrice', language as "uk" | "ru")}
                           </p>
                           <p className="text-4xl font-bold text-primary">
                             {promotion.acf.promotion_price.promotion_price_new}
@@ -282,18 +283,18 @@ const PromotionDetail = () => {
                       <div className="flex items-center gap-2 text-muted-foreground py-4 border-y">
                         <Clock className="w-5 h-5" />
                         <div>
-                          <p className="text-sm">{language === 'ru' ? 'Действует до' : 'Діє до'}</p>
+                          <p className="text-sm">{getStaticTranslation('common.validUntil', language as "uk" | "ru")}</p>
                           <p className="font-semibold">{promotion.acf.promotion_price.promotion_date}</p>
                         </div>
                       </div>
                     )}
 
                     <BookingDialog
-                      triggerText={language === 'ru' ? 'Записаться на прием' : 'Записатися на прийом'}
+                      triggerText={getStaticTranslation('common.bookAppointment', language as "uk" | "ru")}
                     />
 
                     <p className="text-xs text-muted-foreground text-center">
-                      * {language === 'ru' ? 'Акция не суммируется с другими скидками' : 'Акція не сумується з іншими знижками'}
+                      * {getStaticTranslation('promotions.notSummable', language as "uk" | "ru")}
                     </p>
                   </CardContent>
                 </Card>
