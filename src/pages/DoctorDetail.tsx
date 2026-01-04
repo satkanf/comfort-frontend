@@ -411,7 +411,7 @@ const DoctorDetail = () => {
                                     <p className="text-lg">{doctorInfo.fullInfo}</p>
                                 )}
 
-                                <BookingDialog />
+                                <BookingDialog doctor={doctor} />
                             </div>
                         </div>
                     </div>
@@ -556,7 +556,7 @@ const DoctorDetail = () => {
                             }
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <BookingDialog />
+                            <BookingDialog doctor={doctor} />
                             <CallbackDialog variant="outline" size="lg" />
                         </div>
                     </div>

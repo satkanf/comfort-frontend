@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMultilangForms } from "@/hooks/useMultilangForms";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CallbackDialogProps {
   variant?: "default" | "outline" | "ghost";
@@ -26,6 +27,7 @@ const CallbackDialog = ({ variant = "outline", size = "default", className }: Ca
   const [phone, setPhone] = useState("");
   const { toast } = useToast();
   const { formTranslations } = useMultilangForms();
+  const { t } = useLanguage();
 
   const translations = formTranslations || {
     error: 'Помилка',
@@ -46,8 +48,8 @@ const CallbackDialog = ({ variant = "outline", size = "default", className }: Ca
 
   if (!name.trim() || !phone.trim()) {
     toast({
-      title: t('error'),
-      description: t('error.send'),
+      title: translations.error,
+      description: translations.errorSend,
       variant: "destructive",
     });
     return;
@@ -61,8 +63,8 @@ const CallbackDialog = ({ variant = "outline", size = "default", className }: Ca
 
   if (!res.ok) {
     toast({
-      title: t('error'),
-      description: t('error.send'),
+      title: translations.error,
+      description: translations.errorSend,
       variant: "destructive",
     });
     return;

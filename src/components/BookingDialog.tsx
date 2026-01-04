@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from "@/hooks/use-toast";
 import { useMultilangForms } from "@/hooks/useMultilangForms";
 import { getBaseUrl } from "@/utils/baseUrl";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Category {
   id: number;
@@ -18,8 +19,32 @@ interface Category {
   specialtyText: string;
 }
 
-const BookingDialog = () => {
+interface Doctor {
+  id: number;
+  title: { rendered: string };
+  category_names?: string[];
+  acf?: {
+    doctor_specialization?: string;
+  };
+}
+
+interface BookingDialogProps {
+  doctor?: Doctor;
+  triggerText?: string;
+  variant?: "default" | "outline" | "secondary";
+  size?: "default" | "sm" | "lg";
+  children?: React.ReactNode;
+}
+
+const BookingDialog = ({
+  doctor,
+  triggerText,
+  variant = "default",
+  size = "default",
+  children
+}: BookingDialogProps = {}) => {
   const { toast } = useToast();
+  const { language } = useLanguage();
   const [open, setOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,8 +56,20 @@ const BookingDialog = () => {
     time: "",
     specialty:"",
     specialtyText: ""
-    
+
   });
+
+  // Устанавливаем специальность врача при открытии формы
+  useEffect(() => {
+    if (doctor && open) {
+      const specialtyText = doctor.category_names?.[0] || doctor.acf?.doctor_specialization || '';
+      setFormData(prev => ({
+        ...prev,
+        specialty: doctor.id.toString(),
+        specialtyText: specialtyText
+      }));
+    }
+  }, [doctor, open]);
   const { formTranslations } = useMultilangForms();
 
   const translations = formTranslations || {
@@ -120,9 +157,11 @@ const BookingDialog = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg">
-          {translations.doctorsAppointment}
-        </Button>
+        {children || (
+          <Button size={size} variant={variant}>
+            {triggerText || translations.doctorsAppointment}
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
@@ -183,31 +222,44 @@ const BookingDialog = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="specialty">{translations.specialtyDoctor}</Label>
-            <Select value={formData.specialty} // здесь хранится slug
-              onValueChange={(value) => {
-                // найти объект категории по slug
-                const selected = categories.find((c) => c.slug === value);
-                // сохранить и slug, и текст
-                setFormData({
-                  ...formData,
-                  specialty: value,          // slug для value
-                  specialtyText: selected?.name || "", // текст для письма
-                });
-              }}>
-              <SelectTrigger>
-                <SelectValue placeholder={translations.chooseSpecialist} />
-              </SelectTrigger>
-              <SelectContent>
-                {categories
-                   .filter((specialty) => specialty.acf?.show_in_form === true) // только «Так»
-                  .map((specialty) => (
-                    <SelectItem key={specialty.id} value={specialty.slug}>
-                      {specialty.name}
-                    </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="specialty">
+              {doctor ? (language === 'ru' ? 'Выбранный врач' : 'Вибраний лікар') : translations.specialtyDoctor}
+            </Label>
+            {doctor ? (
+              // Поле только для чтения с именем врача
+              <Input
+                id="specialty"
+                value={doctor.title.rendered}
+                readOnly
+                className="bg-muted"
+              />
+            ) : (
+              // Стандартный селект специальностей
+              <Select value={formData.specialty} // здесь хранится slug
+                onValueChange={(value) => {
+                  // найти объект категории по slug
+                  const selected = categories.find((c) => c.slug === value);
+                  // сохранить и slug, и текст
+                  setFormData({
+                    ...formData,
+                    specialty: value,          // slug для value
+                    specialtyText: selected?.name || "", // текст для письма
+                  });
+                }}>
+                <SelectTrigger>
+                  <SelectValue placeholder={translations.chooseSpecialist} />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories
+                     .filter((specialty) => specialty.acf?.show_in_form === true) // только «Так»
+                    .map((specialty) => (
+                      <SelectItem key={specialty.id} value={specialty.slug}>
+                        {specialty.name}
+                      </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <Button type="submit" className="w-full">

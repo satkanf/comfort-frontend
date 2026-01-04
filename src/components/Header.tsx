@@ -10,6 +10,8 @@ import MenuSection from "./Menu.tsx"
 import logo from "../assets/logo.png";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getBaseUrl } from "@/utils/baseUrl";
+import {useMultilangContacts} from "@/hooks/useMultilangContacts.ts";
+import MenuMobile from "@/components/MenuMobile.tsx";
 
 interface HeaderProps {
   postId: string;
@@ -18,6 +20,7 @@ interface HeaderProps {
 const Header = ({ postId }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [services, setServices] = useState([]);
+  const { contactsData, loading: contactsLoading, error: contactsError } = useMultilangContacts();
   const { language, t } = useLanguage();
 
 
@@ -60,13 +63,16 @@ const Header = ({ postId }: HeaderProps) => {
       <div className="border-b bg-secondary/90">
         <div className="container flex h-12 items-center justify-between text-sm">
           <div className="flex items-center gap-6">
-            <a href="tel:+380954220032" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
-              <Phone className="h-4 w-4" />
-              <span className="hidden sm:inline">+38 (095) 422 00 32</span>
-            </a>
+            {contactsData?.phone?.map((item, index) => (
+                    <a href={`tel:${item.phone_value[0]}}`} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                      <Phone className="h-4 w-4" />
+                      <span className="hidden sm:inline">{item.phone_number[0]}</span>
+                    </a>
+            ))}
+
             <div className="hidden md:flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-4 w-4" />
-              <span>м. Ірпінь, вул. Західна 6</span>
+              <span>{contactsData?.location?.location_value}</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -107,47 +113,7 @@ const Header = ({ postId }: HeaderProps) => {
       {isMenuOpen && (
         <div className="md:hidden border-t bg-background">
           <nav className="container flex flex-col space-y-4 py-4">
-            <Link to="/" className="text-foreground hover:text-primary transition-colors">
-              {translations.navHome}
-            </Link>
-            <Link to="/about" className="text-foreground hover:text-primary transition-colors">
-              {translations.navAbout}
-            </Link>
-            <div className="space-y-2">
-              <div className="text-foreground font-medium">{translations.navServices}</div>
-              <div className="pl-4 space-y-2">
-                {services.map((service) => (
-                  <Link
-                    key={service.id}
-                    to={`/services/${service.id}`}
-                    className="block text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {service.name}
-                  </Link>
-                ))}
-                <Link
-                  to="/services"
-                  className="block text-sm font-semibold text-foreground hover:text-primary transition-colors"
-                >
-                  {translations.navAllServices}
-                </Link>
-              </div>
-            </div>
-            <Link to="/doctors" className="text-foreground hover:text-primary transition-colors">
-              {translations.navDoctors}
-            </Link>
-            <Link to="/prices" className="text-foreground hover:text-primary transition-colors">
-              {translations.navPrices}
-            </Link>
-            <Link to="/promotion" className="text-foreground hover:text-primary transition-colors">
-              {translations.navPromotions}
-            </Link>
-            <Link to="/blog" className="text-foreground hover:text-primary transition-colors">
-              {translations.navBlog}
-            </Link>
-            <Link to="/contacts" className="text-foreground hover:text-primary transition-colors">
-              {translations.navContacts}
-            </Link>
+            <MenuMobile />
             <div className="flex flex-col gap-3 mt-4">
               <CallbackDialog className="w-full" />
               <BookingDialog />
