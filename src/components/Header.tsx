@@ -105,16 +105,16 @@ const Header = ({ postId }: HeaderProps) => {
           className="md:hidden"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
-          {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {isMenuOpen ? <X className="h-5 w-5 text-primary-foreground" /> : <Menu className="h-5 w-5 text-primary-foreground" />}
         </Button>
       </div>
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="md:hidden border-t bg-background">
-          <nav className="container flex flex-col space-y-4 py-4">
+        <div className="md:hidden bg-background border-t max-h-[calc(100vh-64px)] overflow-y-auto">
+          <nav className="flex flex-col px-6 py-6 pb-8">
             <MenuMobile />
-            <div className="flex flex-col gap-3 mt-4">
+            <div className="flex flex-col gap-3">
               <CallbackDialog className="w-full" />
               <BookingDialog />
             </div>

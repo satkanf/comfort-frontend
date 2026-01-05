@@ -191,16 +191,19 @@ footer .lucide{
 .service-style h1{
   font-size: 2.25rem;
   font-weight: 600;
+  line-height: 1;
   margin-bottom: 1rem;
 }
 .service-style h2{
   font-size: 2rem;
   font-weight: 600;
+  line-height: 1;
   margin-bottom: 1rem;
 }
 .service-style h3{
   font-size: 1.75rem;
   font-weight: 600;
+  line-height: 1;
   margin-bottom: 1rem;
 }
 .service-style h1:not(:first-child){
@@ -220,5 +223,17 @@ footer .lucide{
 }
 .service-style ol li{
   list-style-type: decimal;
+}
+@media (max-width: 768px) {
+  .container{
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .service-style{
+    padding-top: 0;
+  }
+  .service-style .p-8{
+    padding: 1rem;
+  }
 }
 

@@ -66,29 +66,24 @@ export default function MenuMobile() {
     };
 
     return (
-        <div className="flex flex-col space-y-4">
+        <div className="flex flex-col space-y-6 flex-1">
             {menuSection.map((item, index) => (
                 item.classes.includes("dropdown") ? (
                     <div key={`services-menu-${item.ID || index}`}>
-                        <div
-
-                            className="flex items-center justify-between w-full text-left text-foreground hover:text-primary transition-colors py-2"
-                        >
-                            <Link to="/services">{item.title}</Link>
+                        <div className="flex items-center justify-between w-full text-left text-foreground hover:text-primary transition-colors py-4 text-lg font-medium">
+                            <Link to="/services" className="flex-1">{item.title}</Link>
                             {servicesExpanded ? (
-                                <button className="flex"  onClick={toggleServices}>
-                                    <ChevronUp className="h-4 w-4"/>
+                                <button className="p-2" onClick={toggleServices}>
+                                    <ChevronUp className="h-5 w-5"/>
                                 </button>
-
                             ) : (
-                                <button className="flex"  onClick={toggleServices}>
-                                    <ChevronDown className="h-4 w-4" />
+                                <button className="p-2" onClick={toggleServices}>
+                                    <ChevronDown className="h-5 w-5" />
                                 </button>
-
                             )}
                         </div>
                         {servicesExpanded && (
-                            <div className="pl-4 space-y-2 mt-2 border-border">
+                            <div className="ml-6 space-y-3 mt-4 border-l border-border pl-4">
                                 <MenuTree items={item.child_items} level={1} />
                             </div>
                         )}
@@ -97,7 +92,7 @@ export default function MenuMobile() {
                     <Link
                         key={item.ID || index}
                         to={new URL(item.url).pathname}
-                        className="text-foreground hover:text-primary transition-colors py-2 block"
+                        className="text-foreground hover:text-primary transition-colors py-4 block text-lg font-medium"
                     >
                         {item.title}
                     </Link>

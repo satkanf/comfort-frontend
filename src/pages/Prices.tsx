@@ -89,7 +89,7 @@ const PricesPage = () => {
                               key={index}
                               className="flex justify-between items-center py-4 border-b last:border-0 hover:bg-muted/50 transition-colors px-4 rounded"
                             >
-                              <span className="text-foreground font-medium flex-1" dangerouslySetInnerHTML={{ __html: service.name }}>
+                              <span className="text-foreground font-medium flex-1 break-words" dangerouslySetInnerHTML={{ __html: service.name }}>
 
                               </span>
                               <div

@@ -5,23 +5,23 @@ const MenuTree = ({ items, level = 0}) => {
  return (
     <>
       {items.map((item, index) => (
-        <div className="" key={item.ID || `menu-item-${index}`}>
-            
+        <div className="space-y-2" key={item.ID || `menu-item-${index}`}>
             <Link
                 to={item.url}
                 className={
                 level > 0
-                    ? "block select-none rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                    : "block font-bold text-base text-primary transition-colors"
+                    ? "block select-none rounded-md p-3 text-base leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                    : "block font-medium text-lg text-foreground hover:text-primary transition-colors py-2"
                 }
             >
                 {item.title}
             </Link>
 
             {item.child_items?.length > 0 && (
-                <MenuTree items={item.child_items} level={level + 1} />
+                <div className="ml-4">
+                    <MenuTree items={item.child_items} level={level + 1} />
+                </div>
             )}
-           
         </div>
       ))}
     </>
