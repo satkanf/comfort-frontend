@@ -64,7 +64,7 @@ const Header = ({ postId }: HeaderProps) => {
         <div className="container flex h-12 items-center justify-between text-sm">
           <div className="flex items-center gap-6">
             {contactsData?.phone?.map((item, index) => (
-                    <a href={`tel:${item.phone_value[0]}}`} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                    <a key={`phone-${index}`} href={`tel:${item.phone_value[0]}`} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
                       <Phone className="h-4 w-4" />
                       <span className="hidden sm:inline">{item.phone_number[0]}</span>
                     </a>

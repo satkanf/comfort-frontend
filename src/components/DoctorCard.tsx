@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import LazyImage from '@/components/LazyImage';
 
 export interface DoctorCardData {
   id: number;
@@ -69,12 +70,11 @@ const DoctorCard: React.FC<DoctorCardProps> = ({ doctor, language = "uk" }) => {
       {/* Изображение */}
       <div className="relative h-48 bg-gradient-to-br from-medical-gray-light to-secondary/30 flex-shrink-0">
         {avatar ? (
-          
-          <img
+          <LazyImage
             src={avatar}
             alt={`${title.rendered} - ${specialization}`}
             className="w-full h-full object-cover"
-            onError={(e) => (e.currentTarget.style.display = "none")}
+            placeholder="/placeholder-image.svg"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

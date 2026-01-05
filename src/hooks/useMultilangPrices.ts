@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getBaseUrl } from "@/utils/baseUrl";
 
@@ -33,46 +33,31 @@ interface TransformedPriceCategory {
 
 export const useMultilangPrices = () => {
   const { language } = useLanguage();
-  const [priceCategories, setPriceCategories] = useState<TransformedPriceCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchPrices = async () => {
-      try {
-        setLoading(true);
+  const { data: priceCategories = [], isLoading: loading, error } = useQuery({
+    queryKey: ['prices', language],
+    queryFn: async () => {
+      const baseUrl = getBaseUrl();
+      const requestUrl = `${baseUrl}/wp-json/wp/v2/price?per_page=100&_embed&lang=${language}`;
 
-        // Используем стандартный API цен WordPress
-        const baseUrl = getBaseUrl();
-        const requestUrl = `${baseUrl}/wp-json/wp/v2/price?per_page=100&_embed&lang=${language}`;
-
-        const response = await fetch(requestUrl, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+      const response = await fetch(requestUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
         }
+      });
 
-        const data = await response.json();
-        const transformedData = transformAPIDataToCategories(data);
-        setPriceCategories(transformedData);
-        setError(null);
-
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch prices data');
-        setPriceCategories([]);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
 
-    fetchPrices();
-  }, [language]);
+      const data = await response.json();
+      return transformAPIDataToCategories(data);
+    },
+    staleTime: 1000 * 60 * 10, // 10 минут
+    gcTime: 1000 * 60 * 60, // 1 час
+  });
 
   // Функция для преобразования данных API в структуру категорий
   const transformAPIDataToCategories = (apiData: PriceItem[]): TransformedPriceCategory[] => {
@@ -114,5 +99,9 @@ export const useMultilangPrices = () => {
     return categories;
   };
 
-  return { priceCategories, loading, error };
+  return {
+    priceCategories,
+    loading,
+    error: error ? (error as Error).message : null
+  };
 };
