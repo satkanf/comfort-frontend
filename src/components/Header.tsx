@@ -63,12 +63,17 @@ const Header = ({ postId }: HeaderProps) => {
       <div className="border-b bg-secondary/90">
         <div className="container flex h-12 items-center justify-between text-sm">
           <div className="flex items-center gap-6">
-            {contactsData?.phone?.map((item, index) => (
-                    <a key={`phone-${index}`} href={`tel:${item.phone_value[0]}`} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
-                      <Phone className="h-4 w-4" />
-                      <span className="hidden sm:inline">{item.phone_number[0]}</span>
-                    </a>
-            ))}
+            {contactsData?.phone?.[0] && (
+              <a
+                  href={`tel:${contactsData.phone[0].phone_value}`}
+                  className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Phone className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {contactsData.phone[0].phone_number}
+                </span>
+              </a>
+            )}
 
             <div className="hidden md:flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-4 w-4" />

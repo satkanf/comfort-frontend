@@ -66,7 +66,8 @@ interface ServiceBlock {
     }>;
 }
 
-export const useMultilangServices = (acfFieldName: string = 'about_services_add') => {
+export const
+    useMultilangServices = (acfFieldName: string = 'about_services_add') => {
     const { language } = useLanguage();
     const [services, setServices] = useState<MultilangService[]>([]);
     const [serviceIds, setServiceIds] = useState<number[]>([]);

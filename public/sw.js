@@ -42,7 +42,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   // Кэшируем API запросы
-  if (url.pathname.startsWith('/wp-json/')) {
+  if (url.pathname.startsWith('cms/wp-json/')) {
     event.respondWith(
       caches.open(API_CACHE).then((cache) => {
         return cache.match(request).then((response) => {

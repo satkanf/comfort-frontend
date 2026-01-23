@@ -15,7 +15,7 @@ export  function FooterMenuMain() {
     const fetchMenu = async () => {
       try {
         const baseUrl = getBaseUrl();
-        const menuSuffix = getStaticTranslation('menu.suffix', language as "uk" | "ru");
+        const menuSuffix = language === 'ru' ? '-ru' : '';
         const requestUrl = `${baseUrl}/wp-json/menus/v1/menus/footer-menu${menuSuffix}`;
 
         const response = await fetch(requestUrl, {
@@ -83,8 +83,8 @@ export  function FooterMenuSecondary() {
     const fetchMenu = async () => {
       try {
         const baseUrl = getBaseUrl();
-        const menuSuffix = getStaticTranslation('menu.suffix', language as "uk" | "ru");
-        const requestUrl = `${baseUrl}/wp-json/menus/v1/menus/footer-menu-2${menuSuffix}`;
+        const menuSuffix = language === 'ru' ? '-ru' : '';
+        const requestUrl = `${baseUrl}/wp-json/menus/v1/menus/footer-menu-2-${menuSuffix}`;
 
         const response = await fetch(requestUrl, {
           method: 'GET',
