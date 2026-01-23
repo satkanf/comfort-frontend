@@ -1,4 +1,6 @@
-const WORDPRESS_BASE_URL = "https://comfort.satkan.site/wp-json";
+import { getBaseUrl } from '@/utils/baseUrl';
+
+const WORDPRESS_BASE_URL = `${getBaseUrl()}/wp-json`;
 
 interface WordpressPage {
   id: number;

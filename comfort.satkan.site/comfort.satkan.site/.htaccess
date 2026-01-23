@@ -1,0 +1,29 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # =========================
+  # 1. НЕ трогаем WordPress
+  # =========================
+  RewriteRule ^cms/ - [L]
+
+  # =========================
+  # 2. Существующие файлы и папки
+  # =========================
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # =========================
+  # 3. SPA fallback
+  # =========================
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+
+
+# CORS (если нужно для API)
+<IfModule mod_headers.c>
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-WP-Nonce, X-Requested-With"
+</IfModule>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { getBaseUrl } from "@/utils/baseUrl";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useMultilangForms } from "@/hooks/useMultilangForms";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CallbackDialogProps {
@@ -26,36 +26,21 @@ const CallbackDialog = ({ variant = "outline", size = "default", className }: Ca
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const { toast } = useToast();
-  const { formTranslations } = useMultilangForms();
-  const { t } = useLanguage();
-
-  const translations = formTranslations || {
-    error: 'Помилка',
-    errorSend: 'Не вдалося відправити',
-    sendOk: 'Заявка відправлена!',
-    meCall: 'Ми зв\'яжемося з вами найближчим часом',
-    call: 'Зателефонувати',
-    callback: 'Замовити зворотний дзвінок',
-    contactsLeave: 'Залиште свої контактні дані, і ми зв\'яжемося з вами найближчим часом',
-    name: "Ім'я",
-    enterName: "Введіть ваше ім'я",
-    phone: 'Телефон',
-    sendForm: 'Відправити заявку'
-  };
+ const { t, language } = useLanguage();
 
  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
   if (!name.trim() || !phone.trim()) {
     toast({
-      title: translations.error,
-      description: translations.errorSend,
+      title: t('error'),
+      description: t('error.send'),
       variant: "destructive",
     });
     return;
   }
 
-  const res = await fetch("https://comfort.satkan.site/wp-json/custom/v1/callback", {
+  const res = await fetch(`${getBaseUrl()}/wp-json/custom/v1/callback`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, phone })
@@ -63,16 +48,16 @@ const CallbackDialog = ({ variant = "outline", size = "default", className }: Ca
 
   if (!res.ok) {
     toast({
-      title: translations.error,
-      description: translations.errorSend,
+      title: t('error'),
+      description: t('error.send'),
       variant: "destructive",
     });
     return;
   }
 
   toast({
-    title: translations.sendOk,
-    description: translations.meCall,
+    title: t('send.ok'),
+    description: t('me.call'),
   });
 
   setName("");
@@ -85,34 +70,34 @@ const CallbackDialog = ({ variant = "outline", size = "default", className }: Ca
       <DialogTrigger asChild>
         <Button variant={variant} size={size} className={className}>
           <Phone className="h-4 w-4" />
-          {translations.call}
+          {t('call')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-             {translations.callback}
+             {t('callback')}
           </DialogTitle>
           <DialogDescription>
-               {translations.contactsLeave}
+               {t('contacts.leave')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
             <Label htmlFor="callback-name">
-              {translations.name}
+              {t('name')}
             </Label>
             <Input
               id="callback-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={translations.enterName}
+              placeholder={t('enter.name')}
               required
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="callback-phone">
-               {translations.phone}
+               {t('phone')}
             </Label>
             <Input
               id="callback-phone"
@@ -124,7 +109,7 @@ const CallbackDialog = ({ variant = "outline", size = "default", className }: Ca
             />
           </div>
           <Button type="submit" className="w-full">
-             {translations.sendForm}
+             {t('send.form')}
           </Button>
         </form>
       </DialogContent>

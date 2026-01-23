@@ -2,28 +2,30 @@ import { Link } from "react-router-dom";
 const MenuTree = ({ items, level = 0}) => {
   if (!items) return null;
 
-  // Функция для определения правильного пути по slug и типу объекта
   const getItemPath = (item) => {
-    // Если slug содержит полный URL, извлекаем pathname
-    if (item.slug && item.slug.includes('http')) {
-      return new URL(item.slug).pathname;
+    // Для разных типов контента формируем правильные пути
+    if (item.object === 'page') {
+      // Для страниц используем slug напрямую
+      return `/${item.slug}`;
     }
 
-    // Определяем путь по типу объекта WordPress
     if (item.object === 'post' && item.type === 'post') {
       return `/promotion/${item.slug}`;
     }
+
     if (item.object === 'doctors') {
       return `/doctors/${item.slug}`;
     }
+
     if (item.object === 'services') {
       return `/services/${item.slug}`;
     }
 
-    // Для страниц и других типов используем slug напрямую или pathname из URL
+    // Fallback: пытаемся извлечь pathname из URL
     if (item.url) {
       try {
-        return new URL(item.url).pathname;
+        const url = new URL(item.url);
+        return url.pathname;
       } catch {
         return item.slug || '/';
       }
